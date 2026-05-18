@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ColorCue Tasks</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', system-ui, sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    padding: 16px 14px 28px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lang-switcher {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    border: 1.5px solid #dde1e7;
+    background: #fff;
+  }
+  .lang-btn {
+    padding: 0 10px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    color: #aaa;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .lang-btn.active {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .lang-btn:first-child { border-right: 1.5px solid #dde1e7; }
+  .app-label-block {
+    text-align: center;
+    margin-top: 8px;
+  }
+  .app-label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a56a0;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+  .app-version {
+    font-weight: 400;
+    color: #8a9ab0;
+  }
+  .reload-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    font-size: 20px;
+    cursor: pointer;
+    transition: transform 0.25s;
+  }
+  .reload-btn:active { transform: rotate(180deg); }
+
+  #tileContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .tile {
+    position: relative;
+    border-radius: 12px;
+    padding: 12px 8px 10px;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 19px;
+    font-weight: 600;
+    cursor: pointer;
+    word-break: break-all;
+    line-height: 1.4;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.12s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tile:active { transform: scale(0.94); }
+  .tile-badge {
+    position: absolute;
+    top: 5px; right: 5px;
+    background: rgba(0,0,0,0.2);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 1px 5px;
+    min-width: 17px;
+    text-align: center;
+  }
+  .c-gray   { background: #dde1e7; color: #444; }
+  .c-blue   { background: #c8e6ff; color: #1255a0; }
+  .c-yellow { background: #ffe600; color: #5a4000; }
+  .c-orange { background: #ff6a00; color: #fff; }
+  .c-red    { background: #ff4444; color: #fff; }
+  @keyframes slowBlink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes fastBlink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.08; }
+  }
+  .blink-slow { animation: slowBlink 1s ease-in-out infinite; }
+  .blink-fast { animation: fastBlink 0.32s ease-in-out infinite; }
+
+  .manage-btn {
+    width: 100%;
+    padding: 16px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(26,26,46,0.22);
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.15s;
+  }
+  .manage-btn:active { opacity: 0.8; }
+
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.52);
+    display: none;
+    z-index: 100;
+    overflow-y: auto;
+    padding: 20px 14px 30px;
+  }
+  .modal-bg.open { display: block; }
+  .modal {
+    background: #fff;
+    max-width: 480px;
+    margin: 30px auto 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    padding: 16px 18px;
+    background: #1a1a2e;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h2 { font-size: 17px; font-weight: 700; }
+  .modal-close {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-body { padding: 14px; }
+  .task-card {
+    border: 1.5px solid #e8eaed;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: #fafafa;
+  }
+  .task-card.submitted { background: #f1faf2; border-color: #a5d6a7; }
+  .task-card.overdue   { background: #fff5f5; border-color: #ff6b6b; }
+  .task-content { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 5px; }
+  .task-deadline { font-size: 13px; color: #777; margin-bottom: 10px; }
+  .task-deadline.is-overdue { color: #c62828; font-weight: 700; }
+  .task-deadline.is-soon    { color: #e65100; font-weight: 600; }
+  .submit-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 500; color: #333; cursor: pointer;
+  }
+  .submit-label input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: #2e7d32; cursor: pointer;
+  }
+  .no-tasks { text-align: center; padding: 24px; color: #aaa; font-size: 14px; }
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #aaa;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="tileTitle"></h1>
+  <div class="header-right">
+    <div class="lang-switcher">
+      <button class="lang-btn" id="btn-jp" onclick="setLang('ja')">JP</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+    <button class="reload-btn" id="reloadBtn" title="reload">&#8635;</button>
+  </div>
+</div>
+
+<div id="tileContainer"></div>
+
+<button class="manage-btn" id="manageBtnMain" onclick="location.href='admin.html'"></button>
+<div class="app-label-block">
+  <span class="app-label">ColorCue Tasks <span class="app-version">V1.0 Beta</span></span>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const SA_KEY     = 'sa_data_v1';
+const SUBMIT_KEY = 'sa_submit_v1';
+const LANG_KEY   = 'sa_lang_v1';
+
+const STRINGS = {
+  ja: {
+    defaultTitle:   '科目/仕事一覧',
+    emptyMsg:       '管理画面から科目/仕事と課題/業務を<br>設定してください',
+    manageBtn:      '管理画面',
+    deadlineLabel:  '期限：',
+    overdue:        '　⚠ 期限切れ',
+    completedCheck: '完了した',
+    noTasks:        '課題/業務なし',
+    defaultSubjectName: (i) => `科目/仕事${i}`,
+  },
+  en: {
+    defaultTitle:   'List of Subjects/Works',
+    emptyMsg:       'Please set up subject/work and assignment/task<br>in the admin panel.',
+    manageBtn:      'Admin Panel',
+    deadlineLabel:  'Deadline: ',
+    overdue:        '　⚠ Overdue',
+    completedCheck: 'Completed',
+    noTasks:        'No assignments/tasks',
+    defaultSubjectName: (i) => `Subject/Work #${i}`,
+  }
+};
+
+const OLD_SUBJECT_PATTERNS = [
+  /^科目\d+$/,
+  /^Subject #\d+$/,
+  /^Subject\/Work #\d+$/,
+  /^科目\/仕事\d+$/,
+];
+
+let currentLang = localStorage.getItem(LANG_KEY) || 'ja';
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyLangUI();
+  renderTiles();
+}
+
+function applyLangUI() {
+  document.getElementById('btn-jp').classList.toggle('active', currentLang === 'ja');
+  document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
+  document.getElementById('manageBtnMain').textContent = STRINGS[currentLang].manageBtn;
+}
+
+function t(key) { return STRINGS[currentLang][key]; }
+
+function resolveSubjectName(subj) {
+  const isOld = OLD_SUBJECT_PATTERNS.some(re => re.test(subj.name));
+  return (subj.name && !isOld) ? subj.name : STRINGS[currentLang].defaultSubjectName(subj.id);
+}
+
+function loadSaData() {
+  try {
+    return JSON.parse(localStorage.getItem(SA_KEY) || 'null') || {
+      tile_title: '',
+      subjects: [],
+      tasks: []
+    };
+  } catch(e) {
+    return { tile_title: '', subjects: [], tasks: [] };
+  }
+}
+
+function loadSubmit() {
+  try { return JSON.parse(localStorage.getItem(SUBMIT_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveSubmit(data) { localStorage.setItem(SUBMIT_KEY, JSON.stringify(data)); }
+
+let saData = loadSaData();
+let submitData = loadSubmit();
+
+function tasksOf(subjectId) { return saData.tasks.filter(task => task.subject_id === subjectId); }
+
+function getTileState(subjectId) {
+  const st = tasksOf(subjectId);
+  const key = 's' + subjectId;
+  if (!submitData[key]) submitData[key] = {};
+  const unsub = st.filter(task => !submitData[key][task.id]);
+  if (!unsub.length) return { color: 'gray', blink: null };
+  const now = new Date();
+  const over = unsub.filter(task => new Date(task.deadline) < now);
+  if (over.length >= 2) return { color: 'red', blink: 'fast' };
+  if (over.length === 1) return { color: 'red', blink: 'slow' };
+  const near = unsub.reduce((a, b) => new Date(a.deadline) < new Date(b.deadline) ? a : b);
+  const dh = (new Date(near.deadline) - now) / 3600000;
+  if (dh <= 24) return { color: 'red', blink: null };
+  if (dh <= 48) return { color: 'orange', blink: null };
+  if (dh <= 72) return { color: 'yellow', blink: null };
+  return { color: 'blue', blink: null };
+}
+
+function renderTiles() {
+  saData = loadSaData();
+  const oldDefaults = ['課題一覧', '課題/業務一覧', 'List of Assignments/Works'];
+  const displayTitle = (saData.tile_title && !oldDefaults.includes(saData.tile_title))
+    ? saData.tile_title
+    : t('defaultTitle');
+  document.getElementById('tileTitle').textContent = displayTitle;
+  const box = document.getElementById('tileContainer');
+  box.innerHTML = '';
+  if (!saData.subjects.length) {
+    box.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">&#128203;</div>${t('emptyMsg')}</div>`;
+    return;
+  }
+  saData.subjects.forEach(s => {
+    const st = getTileState(s.id);
+    const el = document.createElement('div');
+    el.className = 'tile c-' + st.color + (st.blink ? ' blink-' + st.blink : '');
+    const key = 's' + s.id;
+    if (!submitData[key]) submitData[key] = {};
+    const cnt = tasksOf(s.id).filter(task => !submitData[key][task.id]).length;
+    el.innerHTML = resolveSubjectName(s) + (cnt > 0 ? `<span class="tile-badge">${cnt}</span>` : '');
+    el.onclick = () => openModal(s);
+    box.appendChild(el);
+  });
+}
+
+function fmtDate(dt) {
+  const d = new Date(dt);
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function openModal(subj) {
+  document.getElementById('modalTitle').textContent = resolveSubjectName(subj);
+  const body = document.getElementById('modalBody');
+  body.innerHTML = '';
+  const key = 's' + subj.id;
+  if (!submitData[key]) submitData[key] = {};
+  const st = tasksOf(subj.id);
+  if (!st.length) {
+    body.innerHTML = `<div class="no-tasks">${t('noTasks')}</div>`;
+  } else {
+    const now = new Date();
+    st.forEach(task => {
+      const done = !!submitData[key][task.id];
+      const over = new Date(task.deadline) < now;
+      const dh   = (new Date(task.deadline) - now) / 3600000;
+      const card = document.createElement('div');
+      card.className = 'task-card' + (done ? ' submitted' : (over ? ' overdue' : ''));
+      const dlClass = 'task-deadline' + (!done && over ? ' is-overdue' : (!done && dh <= 24 ? ' is-soon' : ''));
+      card.innerHTML =
+        `<div class="task-content">${task.content}</div>` +
+        `<div class="${dlClass}">${t('deadlineLabel')}${fmtDate(task.deadline)}${!done && over ? t('overdue') : ''}</div>` +
+        `<label class="submit-label">` +
+          `<input type="checkbox" ${done ? 'checked' : ''} onchange="toggleSubmit('${subj.id}','${task.id}',this)">` +
+          t('completedCheck') +
+        `</label>`;
+      body.appendChild(card);
+    });
+  }
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+document.getElementById('modalBg').onclick = e => {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+};
+
+function toggleSubmit(subjId, taskId, cb) {
+  const key = 's' + subjId;
+  if (!submitData[key]) submitData[key] = {};
+  submitData[key][taskId] = cb.checked;
+  saveSubmit(submitData);
+  const task = saData.tasks.find(x => x.id === taskId);
+  const now = new Date();
+  const over = task && new Date(task.deadline) < now;
+  const card = cb.closest('.task-card');
+  card.className = 'task-card' + (cb.checked ? ' submitted' : (over ? ' overdue' : ''));
+  renderTiles();
+}
+
+document.getElementById('reloadBtn').onclick = () => renderTiles();
+
+applyLangUI();
+renderTiles();
+</script>
+</body>
+</html>

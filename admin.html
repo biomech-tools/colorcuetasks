@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>管理画面（スタンドアローン）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', system-ui, sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+    padding: 16px 14px 32px;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #555;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 8px 12px 8px 8px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .lang-switcher {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    border: 1.5px solid #dde1e7;
+    background: #fff;
+  }
+  .lang-btn {
+    padding: 0 10px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    color: #aaa;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .lang-btn.active {
+    background: #1a1a2e;
+    color: #fff;
+  }
+  .lang-btn:first-child { border-right: 1.5px solid #dde1e7; }
+
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 18px;
+  }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .menu-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border: 2px solid transparent;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-card.active-menu { border-color: #1a1a2e; box-shadow: 0 4px 14px rgba(26,26,46,0.12); }
+  .menu-card .icon { font-size: 26px; margin-bottom: 6px; }
+  .menu-card .label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+
+  .section {
+    display: none;
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 12px;
+  }
+  .section.active { display: block; }
+  .section-title { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
+
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1.5px solid #dde1e7;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    background: #fff;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #1a1a2e; }
+  .form-textarea { resize: vertical; min-height: 64px; }
+  .form-row-inline { display: flex; gap: 8px; }
+  .form-row-inline .form-select { flex: 1; }
+
+  .btn {
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 12px 18px;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: #1a1a2e; color: #fff; width: 100%; margin-top: 10px; }
+  .btn-danger { background: #d32f2f; color: #fff; padding: 7px 12px; font-size: 13px; border-radius: 8px; }
+  .btn-save-small { background: #1a1a2e; color: #fff; padding: 9px 16px; font-size: 13px; border-radius: 8px; }
+
+  .subject-item {
+    border: 1.5px solid #e8eaed;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: #fafafa;
+  }
+  .subject-item-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    margin-bottom: 8px;
+  }
+  .subject-name-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .subject-name-row .form-input { flex: 1; margin-bottom: 0; }
+
+  .task-list-scroll {
+    max-height: calc(3 * 72px);
+    overflow-y: auto;
+    margin-bottom: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #c8cdd5 transparent;
+  }
+  .task-list-scroll::-webkit-scrollbar { width: 4px; }
+  .task-list-scroll::-webkit-scrollbar-track { background: transparent; }
+  .task-list-scroll::-webkit-scrollbar-thumb { background: #c8cdd5; border-radius: 4px; }
+
+  .task-item {
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 64px;
+  }
+  .task-item-info { flex: 1; }
+  .task-item-content { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 3px; }
+  .task-item-deadline { font-size: 12px; color: #777; }
+
+  .add-task-box {
+    background: #f7f8fa;
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 12px;
+    border: 1.5px dashed #c8cdd5;
+  }
+  .add-task-box .section-title { font-size: 13px; color: #777; margin-bottom: 10px; }
+
+  .no-tasks { font-size: 13px; color: #bbb; text-align: center; padding: 10px 0; }
+
+  .subject-count-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .subject-count-row label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
+  .subject-count-row .form-select { max-width: 100px; }
+  .subject-count-row .btn-save-small { white-space: nowrap; }
+
+  .reset-section {
+    margin-top: 16px;
+    padding: 14px;
+    border: 1.5px solid #ffcdd2;
+    border-radius: 10px;
+    background: #fff8f8;
+  }
+  .reset-section-title { font-size: 13px; font-weight: 700; color: #c62828; margin-bottom: 8px; }
+  .reset-section p { font-size: 12px; color: #888; margin-bottom: 10px; }
+  .btn-reset { background: #d32f2f; color: #fff; width: 100%; padding: 10px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1a1a2e;
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 500;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="index.html">&#8592; <span id="backLinkText"></span></a>
+  <div class="lang-switcher">
+    <button class="lang-btn" id="btn-jp" onclick="setLang('ja')">JP</button>
+    <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</div>
+<div class="page-title" id="pageTitle"></div>
+
+<div class="menu-grid">
+  <div class="menu-card" id="mc-title" onclick="showSection('title')">
+    <div class="icon">&#9999;&#65039;</div>
+    <div class="label" id="mc-title-label"></div>
+  </div>
+  <div class="menu-card" id="mc-name" onclick="showSection('name')">
+    <div class="icon">&#128218;</div>
+    <div class="label" id="mc-name-label"></div>
+  </div>
+  <div class="menu-card" id="mc-task" onclick="showSection('task')">
+    <div class="icon">&#128203;</div>
+    <div class="label" id="mc-task-label"></div>
+  </div>
+  <div class="menu-card" id="mc-reset" onclick="showSection('reset')">
+    <div class="icon">&#128260;</div>
+    <div class="label" id="mc-reset-label"></div>
+  </div>
+</div>
+
+<div class="section" id="sec-title">
+  <div class="section-title" id="sec-title-heading"></div>
+  <div class="form-row">
+    <label class="form-label" id="labelTitle"></label>
+    <input class="form-input" id="newTitle" placeholder="">
+  </div>
+  <button class="btn btn-primary" onclick="saveTitle()" id="saveTitleBtn"></button>
+</div>
+
+<div class="section" id="sec-name">
+  <div class="section-title" id="sec-name-heading"></div>
+  <div class="subject-count-row">
+    <label id="subjectCountLabel"></label>
+    <select class="form-select" id="subjectCount">
+      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+      <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+    </select>
+    <button class="btn btn-save-small" onclick="applySubjectCount()" id="applyCountBtn"></button>
+  </div>
+  <div id="nameList"></div>
+</div>
+
+<div class="section" id="sec-task">
+  <div class="section-title" id="sec-task-heading"></div>
+  <div id="taskList"></div>
+</div>
+
+<div class="section" id="sec-reset">
+  <div class="section-title" id="sec-reset-heading"></div>
+  <div class="reset-section">
+    <div class="reset-section-title" id="resetSubmitTitle"></div>
+    <p id="resetSubmitDesc"></p>
+    <button class="btn-reset" onclick="resetSubmits()" id="resetSubmitBtn"></button>
+  </div>
+  <div class="reset-section" style="margin-top:12px;">
+    <div class="reset-section-title" id="resetAllTitle"></div>
+    <p id="resetAllDesc"></p>
+    <button class="btn-reset" onclick="resetAll()" id="resetAllBtn"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SA_KEY     = 'sa_data_v1';
+const SUBMIT_KEY = 'sa_submit_v1';
+const LANG_KEY   = 'sa_lang_v1';
+
+const STRINGS = {
+  ja: {
+    pageTitle:            '管理画面',
+    backLink:             '起動画面に戻る',
+    mcTitle:              'タイトル設定',
+    mcName:               '科目/仕事設定',
+    mcTask:               '課題/業務設定',
+    mcReset:              'データ管理',
+    secTitleHeading:      'タイトル設定',
+    labelTitle:           '表示タイトル',
+    saveTitleBtn:         '保存する',
+    secNameHeading:       '科目/仕事名設定',
+    subjectCountLabel:    '科目/仕事数：',
+    applyCountBtn:        '科目/仕事数を適用',
+    secTaskHeading:       '課題/業務設定',
+    secResetHeading:      'データ管理',
+    resetSubmitTitle:     '完了状況をリセット',
+    resetSubmitDesc:      '全科目/業務の「完了した」チェックをクリアします。科目/仕事や課題/業務データは消えません。',
+    resetSubmitBtn:       '完了状況をリセット',
+    resetAllTitle:        '全データをリセット',
+    resetAllDesc:         '科目/仕事，課題/業務，完了状況を含む全てのデータを削除します。この操作は元に戻せません。',
+    resetAllBtn:          '全データをリセット',
+    subjectHeader:        '科目/仕事 ',
+    subjectPlaceholder:   '科目/仕事名',
+    saveNameBtn:          '保存',
+    noSubjectMsg:         '先に「科目/仕事設定」で科目/仕事を追加してください',
+    noTasks:              '課題/業務なし',
+    addTaskTitle:         '新しい課題/業務を追加',
+    taskContentLabel:     '課題/業務内容',
+    taskContentHolder:    '課題/業務の内容を入力',
+    deadlineLabel:        '期限（日付）',
+    addTaskBtn:           '課題/業務を追加',
+    deadlinePrefix:       '期限：',
+    deleteBtn:            '削除',
+    toastTitleSaved:      'タイトルを保存しました',
+    toastCountApplied:    '科目/仕事数を適用しました',
+    toastNameSaved:       '科目/仕事名を保存しました',
+    toastTaskAdded:       '課題/業務を追加しました',
+    toastTaskDeleted:     '課題/業務を削除しました',
+    toastResetSubmit:     '完了状況をリセットしました',
+    toastResetAll:        '全データをリセットしました',
+    confirmCountDown:     (n, m) => `科目/仕事数を${n}に減らすと、科目/仕事${m}以降の課題/業務データも削除されます。よろしいですか？`,
+    confirmDeleteTask:    'この課題/業務を削除しますか？',
+    confirmResetSubmit:   '全科目/業務の完了状況をリセットしますか？',
+    confirmResetAll:      '全データ（科目/仕事・課題/業務・完了状況）を削除します。この操作は元に戻せません。よろしいですか？',
+    inputRequired:        '内容と日付を入力してください',
+    defaultSubjectName:   (i) => `科目/仕事${i}`,
+    subjectTaskHeader:    (id, name) => `科目/仕事 ${id}：${name}`,
+    hourSuffix:           (h) => `${h}時`,
+    minOptions:           ['00分','15分','30分','45分'],
+  },
+  en: {
+    pageTitle:            'Admin Panel',
+    backLink:             'Return to subjects/works display screen',
+    mcTitle:              'Title Settings',
+    mcName:               'Subject/Work Settings',
+    mcTask:               'Assignment/Task Settings',
+    mcReset:              'Data Management',
+    secTitleHeading:      'Title Settings',
+    labelTitle:           'Label Title',
+    saveTitleBtn:         'Save',
+    secNameHeading:       'Subject/Work Settings',
+    subjectCountLabel:    'Number of subjects/works:',
+    applyCountBtn:        'Apply number of subjects/works',
+    secTaskHeading:       'Assignment/Task Settings',
+    secResetHeading:      'Data Management',
+    resetSubmitTitle:     'Reset Completion Status',
+    resetSubmitDesc:      'Clears the "Completed" checkbox for all subjects/works. subject/work and assignment/task data will not be deleted.',
+    resetSubmitBtn:       'Reset Completion Status',
+    resetAllTitle:        'Reset All Data',
+    resetAllDesc:         'Deletes all data, including subjects/works, assignments/tasks, and completion status. This action cannot be undone.',
+    resetAllBtn:          'Reset All Data',
+    subjectHeader:        'Subject/Work #',
+    subjectPlaceholder:   'Subject/Work name',
+    saveNameBtn:          'Save',
+    noSubjectMsg:         'Please add subjects/works in "Subject/Work Settings" first.',
+    noTasks:              'No assignments/tasks',
+    addTaskTitle:         'Add a new assignment/task',
+    taskContentLabel:     'Assignment/Task details',
+    taskContentHolder:    'Input the details of the assignment/task',
+    deadlineLabel:        'Deadline',
+    addTaskBtn:           'Add assignment/task',
+    deadlinePrefix:       'Deadline: ',
+    deleteBtn:            'Delete',
+    toastTitleSaved:      'Title saved.',
+    toastCountApplied:    'Number of subjects/works applied.',
+    toastNameSaved:       'Subject/work name saved.',
+    toastTaskAdded:       'Assignment/task added.',
+    toastTaskDeleted:     'Assignment/task deleted.',
+    toastResetSubmit:     'Completion status reset.',
+    toastResetAll:        'All data reset.',
+    confirmCountDown:     (n, m) => `Reducing to ${n} subjects/works will also delete assignment/task data for subject/work #${m} and beyond. Continue?`,
+    confirmDeleteTask:    'Delete this assignment/task?',
+    confirmResetSubmit:   'Reset completion status for all subjects/works?',
+    confirmResetAll:      'Delete all data (subjects/works, assignments/tasks, completion status). This cannot be undone. Continue?',
+    inputRequired:        'Please enter content and date.',
+    defaultSubjectName:   (i) => `Subject/Work #${i}`,
+    subjectTaskHeader:    (id, name) => `Subject/Work #${id}: ${name}`,
+    hourSuffix:           (h) => `${String(h).padStart(2,'0')}:00`,
+    minOptions:           [':00',':15',':30',':45'],
+  }
+};
+
+let currentLang = localStorage.getItem(LANG_KEY) || 'ja';
+
+function s(key, ...args) {
+  const val = STRINGS[currentLang][key];
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyLangUI();
+  if (currentSection === 'name') renderNameSection();
+  if (currentSection === 'task') renderTaskList();
+}
+
+function applyLangUI() {
+  document.getElementById('btn-jp').classList.toggle('active', currentLang === 'ja');
+  document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
+  document.getElementById('pageTitle').textContent          = s('pageTitle');
+  document.getElementById('backLinkText').textContent       = s('backLink');
+  document.getElementById('mc-title-label').textContent     = s('mcTitle');
+  document.getElementById('mc-name-label').textContent      = s('mcName');
+  document.getElementById('mc-task-label').textContent      = s('mcTask');
+  document.getElementById('mc-reset-label').textContent     = s('mcReset');
+  document.getElementById('sec-title-heading').textContent  = s('secTitleHeading');
+  document.getElementById('labelTitle').textContent         = s('labelTitle');
+  document.getElementById('saveTitleBtn').textContent       = s('saveTitleBtn');
+  document.getElementById('sec-name-heading').textContent   = s('secNameHeading');
+  document.getElementById('subjectCountLabel').textContent  = s('subjectCountLabel');
+  document.getElementById('applyCountBtn').textContent      = s('applyCountBtn');
+  document.getElementById('sec-task-heading').textContent   = s('secTaskHeading');
+  document.getElementById('sec-reset-heading').textContent  = s('secResetHeading');
+  document.getElementById('resetSubmitTitle').textContent   = s('resetSubmitTitle');
+  document.getElementById('resetSubmitDesc').textContent    = s('resetSubmitDesc');
+  document.getElementById('resetSubmitBtn').textContent     = s('resetSubmitBtn');
+  document.getElementById('resetAllTitle').textContent      = s('resetAllTitle');
+  document.getElementById('resetAllDesc').textContent       = s('resetAllDesc');
+  document.getElementById('resetAllBtn').textContent        = s('resetAllBtn');
+  document.getElementById('newTitle').placeholder           = s('labelTitle');
+}
+
+function loadSaData() {
+  try {
+    return JSON.parse(localStorage.getItem(SA_KEY) || 'null') || {
+      tile_title: '',
+      subjects: [],
+      tasks: []
+    };
+  } catch(e) {
+    return { tile_title: '', subjects: [], tasks: [] };
+  }
+}
+
+function saveSaData(data) {
+  localStorage.setItem(SA_KEY, JSON.stringify(data));
+}
+
+let saData = loadSaData();
+let currentSection = null;
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function showSection(name) {
+  ['title','name','task','reset'].forEach(sec => {
+    document.getElementById('sec-' + sec).classList.remove('active');
+    document.getElementById('mc-' + sec).classList.remove('active-menu');
+  });
+  if (currentSection === name) {
+    currentSection = null;
+    return;
+  }
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('mc-' + name).classList.add('active-menu');
+  currentSection = name;
+  if (name === 'name') renderNameSection();
+  if (name === 'task') renderTaskList();
+  if (name === 'title') {
+    const oldDefaults = ['課題一覧', '課題/業務一覧', 'List of Assignments/Works'];
+    const storedTitle = oldDefaults.includes(saData.tile_title) ? '' : saData.tile_title;
+    document.getElementById('newTitle').value = storedTitle;
+  }
+  document.getElementById('sec-' + name).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function saveTitle() {
+  const title = document.getElementById('newTitle').value.trim();
+  saData.tile_title = title;
+  saveSaData(saData);
+  showToast(s('toastTitleSaved'));
+}
+
+function renderNameSection() {
+  const count = saData.subjects.length || 1;
+  document.getElementById('subjectCount').value = String(count);
+  renderNameList();
+}
+
+function renderNameList() {
+  const list = document.getElementById('nameList');
+  list.innerHTML = '';
+  saData.subjects.forEach((subj) => {
+    const div = document.createElement('div');
+    div.className = 'subject-item';
+    div.innerHTML =
+      `<div class="subject-item-header">${s('subjectHeader')}${subj.id}</div>` +
+      `<div class="subject-name-row">` +
+        `<input class="form-input" id="sname${subj.id}" value="${escHtml(subj.name)}" placeholder="${escHtml(s('subjectPlaceholder'))}">` +
+        `<button class="btn btn-save-small" onclick="saveName(${subj.id})">${s('saveNameBtn')}</button>` +
+      `</div>`;
+    list.appendChild(div);
+  });
+}
+
+function applySubjectCount() {
+  const newCount = parseInt(document.getElementById('subjectCount').value, 10);
+  const current = saData.subjects.length;
+  if (newCount > current) {
+    for (let i = current + 1; i <= newCount; i++) {
+      saData.subjects.push({ id: i, name: s('defaultSubjectName', i) });
+    }
+  } else if (newCount < current) {
+    if (!confirm(s('confirmCountDown', newCount, newCount + 1))) {
+      document.getElementById('subjectCount').value = String(current);
+      return;
+    }
+    const keepIds = saData.subjects.slice(0, newCount).map(subj => subj.id);
+    saData.subjects = saData.subjects.slice(0, newCount);
+    saData.tasks = saData.tasks.filter(task => keepIds.includes(task.subject_id));
+  }
+  saveSaData(saData);
+  renderNameList();
+  showToast(s('toastCountApplied'));
+}
+
+function saveName(id) {
+  const name = document.getElementById('sname' + id).value.trim() || s('subjectPlaceholder');
+  const subj = saData.subjects.find(x => x.id === id);
+  if (subj) { subj.name = name; saveSaData(saData); showToast(s('toastNameSaved')); }
+}
+
+function fmtDate(dt) {
+  const d = new Date(dt);
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderTaskList() {
+  const list = document.getElementById('taskList');
+  list.innerHTML = '';
+  if (!saData.subjects.length) {
+    list.innerHTML = `<div style="text-align:center;color:#aaa;font-size:14px;padding:20px">${s('noSubjectMsg')}</div>`;
+    return;
+  }
+  const minLabels = s('minOptions');
+  const minVals = ['00','15','30','45'];
+  saData.subjects.forEach(subj => {
+    const subTasks = saData.tasks.filter(task => task.subject_id === subj.id);
+    const div = document.createElement('div');
+    div.className = 'subject-item';
+    let tasksInner = subTasks.length ? '' : `<div class="no-tasks">${s('noTasks')}</div>`;
+    subTasks.forEach(task => {
+      tasksInner +=
+        `<div class="task-item">` +
+          `<div class="task-item-info">` +
+            `<div class="task-item-content">${escHtml(task.content)}</div>` +
+            `<div class="task-item-deadline">${s('deadlinePrefix')}${fmtDate(task.deadline)}</div>` +
+          `</div>` +
+          `<button class="btn btn-danger" onclick="deleteTask('${escHtml(task.id)}')">${s('deleteBtn')}</button>` +
+        `</div>`;
+    });
+    const hourOpts = Array.from({length:24},(_,h) =>
+      `<option value="${String(h).padStart(2,'0')}">${s('hourSuffix', h)}</option>`
+    ).join('');
+    const minOpts = minVals.map((v,i) => `<option value="${v}">${minLabels[i]}</option>`).join('');
+    div.innerHTML =
+      `<div class="subject-item-header">${s('subjectTaskHeader', subj.id, escHtml(subj.name))}</div>` +
+      `<div class="task-list-scroll">${tasksInner}</div>` +
+      `<div class="add-task-box">` +
+        `<div class="section-title">${s('addTaskTitle')}</div>` +
+        `<div class="form-row">` +
+          `<label class="form-label">${s('taskContentLabel')}</label>` +
+          `<textarea class="form-textarea" id="tc${subj.id}" placeholder="${escHtml(s('taskContentHolder'))}"></textarea>` +
+        `</div>` +
+        `<div class="form-row">` +
+          `<label class="form-label">${s('deadlineLabel')}</label>` +
+          `<input class="form-input" type="date" id="td${subj.id}">` +
+        `</div>` +
+        `<div class="form-row-inline">` +
+          `<select class="form-select" id="th${subj.id}">${hourOpts}</select>` +
+          `<select class="form-select" id="tm${subj.id}">${minOpts}</select>` +
+        `</div>` +
+        `<button class="btn btn-primary" onclick="addTask(${subj.id})">${s('addTaskBtn')}</button>` +
+      `</div>`;
+    list.appendChild(div);
+  });
+}
+
+function addTask(subjId) {
+  const content = document.getElementById('tc' + subjId).value.trim();
+  const date    = document.getElementById('td' + subjId).value;
+  const hour    = document.getElementById('th' + subjId).value;
+  const min     = document.getElementById('tm' + subjId).value;
+  if (!content || !date) { showToast(s('inputRequired')); return; }
+  const deadline = `${date}T${hour}:${min}:00`;
+  const id = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  saData.tasks.push({ id, subject_id: subjId, content, deadline });
+  saveSaData(saData);
+  renderTaskList();
+  showToast(s('toastTaskAdded'));
+}
+
+function deleteTask(taskId) {
+  if (!confirm(s('confirmDeleteTask'))) return;
+  saData.tasks = saData.tasks.filter(task => task.id !== taskId);
+  saveSaData(saData);
+  renderTaskList();
+  showToast(s('toastTaskDeleted'));
+}
+
+function resetSubmits() {
+  if (!confirm(s('confirmResetSubmit'))) return;
+  localStorage.removeItem(SUBMIT_KEY);
+  showToast(s('toastResetSubmit'));
+}
+
+function resetAll() {
+  if (!confirm(s('confirmResetAll'))) return;
+  localStorage.removeItem(SA_KEY);
+  localStorage.removeItem(SUBMIT_KEY);
+  saData = { tile_title: '', subjects: [], tasks: [] };
+  showToast(s('toastResetAll'));
+  if (currentSection === 'task') renderTaskList();
+  if (currentSection === 'name') renderNameSection();
+}
+
+applyLangUI();
+</script>
+</body>
+</html>
