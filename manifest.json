@@ -1,7 +1,6 @@
 {
   "name": "ColorCue Tasks",
   "short_name": "CCT",
-  "description": "Assignment/Task Manegement Tool",
   "start_url": "./index.html",
   "display": "ColorCue Tasks",
   "background_color": "#0b1a33",

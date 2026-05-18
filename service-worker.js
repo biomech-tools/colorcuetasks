@@ -1,16 +1,11 @@
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open("cct-cache").then((cache) => {
-      return cache.addAll([
-        "./",
-        "./index.html",
-        "./manifest.json",
-        "./icon-192.png",
-        "./icon-512.png"
-      ]);
+      return cache.addAll(["./index.html", "./"]);
     })
   );
 });
+
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
