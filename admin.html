@@ -357,7 +357,7 @@ const STRINGS = {
     confirmResetAll:      '全データ（科目/仕事・課題/業務・完了状況）を削除します。この操作は元に戻せません。よろしいですか？',
     inputRequired:        '内容と日付を入力してください',
     defaultSubjectName:   (i) => `科目/仕事${i}`,
-    subjectTaskHeader:    (id, name) => `科目/仕事 ${id}：${name}`,
+    subjectTaskHeader:    (id, name) => `#${id}: ${name}`,
     hourSuffix:           (h) => `${h}時`,
     minOptions:           ['00分','15分','30分','45分'],
   },
@@ -407,7 +407,7 @@ const STRINGS = {
     confirmResetAll:      'Delete all data (subjects/works, assignments/tasks, completion status). This cannot be undone. Continue?',
     inputRequired:        'Please enter content and date.',
     defaultSubjectName:   (i) => `Subject / Work #${i}`,
-    subjectTaskHeader:    (id, name) => `Subject / Work #${id}: ${name}`,
+    subjectTaskHeader:    (id, name) => `#${id}: ${name}`,
     hourSuffix:           (h) => `${String(h).padStart(2,'0')}:00`,
     minOptions:           [':00',':15',':30',':45'],
   }
