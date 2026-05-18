@@ -363,7 +363,7 @@ const STRINGS = {
   },
   en: {
     pageTitle:            'Admin Panel',
-    backLink:             'Return to subjects/works display screen',
+    backLink:             'Return to initial screen',
     mcTitle:              'Title Settings',
     mcName:               'Subject/Work Settings',
     mcTask:               'Assignment/Task Settings',
@@ -382,7 +382,7 @@ const STRINGS = {
     resetAllTitle:        'Reset All Data',
     resetAllDesc:         'Deletes all data, including subjects/works, assignments/tasks, and completion status. This action cannot be undone.',
     resetAllBtn:          'Reset All Data',
-    subjectHeader:        'Subject/Work #',
+    subjectHeader:        'Subject / Work #',
     subjectPlaceholder:   'Subject/Work name',
     saveNameBtn:          'Save',
     noSubjectMsg:         'Please add subjects/works in "Subject/Work Settings" first.',
@@ -406,8 +406,8 @@ const STRINGS = {
     confirmResetSubmit:   'Reset completion status for all subjects/works?',
     confirmResetAll:      'Delete all data (subjects/works, assignments/tasks, completion status). This cannot be undone. Continue?',
     inputRequired:        'Please enter content and date.',
-    defaultSubjectName:   (i) => `Subject/Work #${i}`,
-    subjectTaskHeader:    (id, name) => `Subject/Work #${id}: ${name}`,
+    defaultSubjectName:   (i) => `Subject / Work #${i}`,
+    subjectTaskHeader:    (id, name) => `Subject / Work #${id}: ${name}`,
     hourSuffix:           (h) => `${String(h).padStart(2,'0')}:00`,
     minOptions:           [':00',':15',':30',':45'],
   }
@@ -471,6 +471,12 @@ function saveSaData(data) {
 }
 
 let saData = loadSaData();
+if (saData.subjects.length === 0) {
+  for (let i = 1; i <= 9; i++) {
+    saData.subjects.push({ id: i, name: s('defaultSubjectName', i) });
+  }
+  saveSaData(saData);
+}
 let currentSection = null;
 
 function showToast(msg) {
