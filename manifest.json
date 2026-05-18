@@ -1,9 +1,9 @@
 {
   "name": "ColorCue Tasks",
   "short_name": "CCT",
-  "description": "時間と色でタスクの緊急度を可視化するツール",
+  "description": "Assignment/Task Manegement Tool",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "ColorCue Tasks",
   "background_color": "#0b1a33",
   "theme_color": "#0b1a33",
   "icons": [
