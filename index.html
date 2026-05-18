@@ -99,7 +99,9 @@
     font-size: 19px;
     font-weight: 600;
     cursor: pointer;
-    word-break: break-all;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
     line-height: 1.4;
     border: none;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -274,7 +276,7 @@ const STRINGS = {
     overdue:        '　⚠ Overdue',
     completedCheck: 'Completed',
     noTasks:        'No assignments/tasks',
-    defaultSubjectName: (i) => `Subject/Work #${i}`,
+    defaultSubjectName: (i) => `Subject / Work #${i}`,
   }
 };
 
