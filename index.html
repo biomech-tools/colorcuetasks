@@ -299,6 +299,22 @@ const LANG_KEY    = 'cct_lang_v1';
 const SAVED_GROUP = 'cct_group_v1';
 const SAVED_REMEMBER = 'cct_remember_v1';  // 'yes' if user opted in
 const SESSION_GROUP  = 'cct_session_group_v1'; // sessionStorage key
+const GROUP_CACHE_KEY = 'cct_group_cache_v1';
+const GROUP_CACHE_TTL = 60000; // 60秒
+
+function writeGroupCache(code, data) {
+  sessionStorage.setItem(GROUP_CACHE_KEY, JSON.stringify({ code, ts: Date.now(), data }));
+}
+function readGroupCache(code) {
+  try {
+    const raw = sessionStorage.getItem(GROUP_CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (obj.code !== code || Date.now() - obj.ts > GROUP_CACHE_TTL) return null;
+    return obj.data;
+  } catch { return null; }
+}
+function clearGroupCache() { sessionStorage.removeItem(GROUP_CACHE_KEY); }
 
 const STRINGS = {
   ja: {
@@ -468,6 +484,14 @@ async function enterGroup(code) {
 }
 
 async function loadGroupData(code) {
+  const cached = readGroupCache(code);
+  if (cached) {
+    appData.tile_title = cached.tile_title;
+    appData.subjects   = cached.subjects;
+    appData.tasks      = cached.tasks;
+    submitData         = cached.submitData;
+    return;
+  }
   const [configSnap, subjectsSnap, tasksSnap, submitSnap] = await Promise.all([
     getDoc(doc(db, 'groups', code, 'config', 'main')),
     getDocs(collection(db, 'groups', code, 'subjects')),
@@ -483,11 +507,13 @@ async function loadGroupData(code) {
     content: d.data().content, deadline: d.data().deadline,
   }));
   submitData = submitSnap.exists() ? (submitSnap.data() || {}) : {};
+  writeGroupCache(code, { tile_title: appData.tile_title, subjects: appData.subjects, tasks: appData.tasks, submitData });
 }
 
 window.reloadData = async function() {
   if (!groupCode) return;
   showLoading();
+  clearGroupCache();
   try { await loadGroupData(groupCode); renderTiles(); } catch(e) { showToast(e.message); }
   hideLoading();
 };
@@ -496,6 +522,7 @@ window.logout = function() {
   groupCode  = null;
   appData    = { tile_title: '', subjects: [], tasks: [] };
   submitData = {};
+  clearGroupCache();
   document.getElementById('appScreen').classList.remove('visible');
   document.getElementById('codeError').textContent = '';
   sessionStorage.removeItem(SESSION_GROUP);

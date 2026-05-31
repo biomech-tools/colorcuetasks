@@ -603,6 +603,10 @@ const SESSION_KEY = 'cct_admin_role_v1';
 const MASTER_ID_KEY = 'cct_master_id_v1';
 const MASTER_REMEMBER_KEY = 'cct_master_remember_v1'; // 'yes' if master opted in
 const MAX_GROUPS_PER_MASTER = 20;
+const GROUP_CACHE_KEY = 'cct_group_cache_v1';
+const GROUP_CACHE_TTL = 60000; // 60秒
+
+function clearGroupCache() { sessionStorage.removeItem(GROUP_CACHE_KEY); }
 
 const DEFAULT_USER_PW = 'pass2026';
 
@@ -1514,6 +1518,15 @@ function applyAdminRole() {
 }
 
 window.goBack = function() {
+  // メイン画面での再フェッチをスキップできるようキャッシュを書き込んでから遷移
+  if (activeGroupCode && subjects && tasks) {
+    const tileTitle = document.getElementById('newTitle')?.value || '';
+    sessionStorage.setItem(GROUP_CACHE_KEY, JSON.stringify({
+      code: activeGroupCode,
+      ts: Date.now(),
+      data: { tile_title: tileTitle, subjects, tasks, submitData: {} },
+    }));
+  }
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY + '_group');
   location.href = 'index.html';
@@ -1569,6 +1582,22 @@ async function selectGroup(code, doLoad) {
 }
 
 async function loadGroupData(code) {
+  // キャッシュがあれば即座に復元（管理画面では書き込み後に無効化するので安全）
+  const raw = sessionStorage.getItem(GROUP_CACHE_KEY);
+  if (raw) {
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.code === code && Date.now() - obj.ts <= GROUP_CACHE_TTL) {
+        const c = obj.data;
+        subjects = c.subjects;
+        tasks    = c.tasks;
+        const tileTitle   = c.tile_title;
+        const oldDefaults = ['課題一覧','課題/業務一覧','List of Assignments/Works'];
+        document.getElementById('newTitle').value = oldDefaults.includes(tileTitle) ? '' : tileTitle;
+        return;
+      }
+    } catch { /* フォールスルー */ }
+  }
   const [subjectsSnap, tasksSnap, configSnap] = await Promise.all([
     getDocs(collection(db, 'groups', code, 'subjects')),
     getDocs(collection(db, 'groups', code, 'tasks')),
@@ -1716,6 +1745,7 @@ window.saveTitle = async function() {
   showLoading();
   try {
     await setDoc(doc(db, 'groups', activeGroupCode, 'config', 'main'), { tile_title: title }, { merge: true });
+    clearGroupCache();
     showToast(s('toastTitleSaved'));
   } catch(e) { showToast(e.message); }
   hideLoading();
@@ -1770,6 +1800,7 @@ window.applySubjectCount = async function() {
       tasks    = tasks.filter(t => !removeIds.includes(t.subject_id));
     }
     await batch.commit();
+    clearGroupCache();
     renderNameList();
     showToast(s('toastCountApplied'));
   } catch(e) { showToast(e.message); }
@@ -1784,6 +1815,7 @@ async function saveName(id) {
     await setDoc(doc(db, 'groups', activeGroupCode, 'subjects', 's' + id), { id, name, order: id }, { merge: true });
     const subj = subjects.find(x => x.id === id);
     if (subj) subj.name = name;
+    clearGroupCache();
     showToast(s('toastNameSaved'));
   } catch(e) { showToast(e.message); }
   hideLoading();
@@ -1855,6 +1887,7 @@ async function addTask(subjId) {
   try {
     await setDoc(doc(db, 'groups', activeGroupCode, 'tasks', id), { subject_id: subjId, content, deadline });
     tasks.push({ id, subject_id: subjId, content, deadline });
+    clearGroupCache();
     renderTaskList();
     showToast(s('toastTaskAdded'));
   } catch(e) { showToast(e.message); }
@@ -1867,6 +1900,7 @@ async function deleteTask(taskId) {
   try {
     await deleteDoc(doc(db, 'groups', activeGroupCode, 'tasks', taskId));
     tasks = tasks.filter(t => t.id !== taskId);
+    clearGroupCache();
     renderTaskList();
     showToast(s('toastTaskDeleted'));
   } catch(e) { showToast(e.message); }
