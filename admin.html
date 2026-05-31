@@ -1569,7 +1569,7 @@ async function loadAllGroups() {
   myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodes.includes(g.code));
 }
 
-async function selectGroup(code, doLoad) {
+async function selectGroup(code, doLoad, skipRender) {
   activeGroupCode = code;
   localStorage.setItem(SAVED_GROUP, code);
   document.getElementById('currentGroupBadge').textContent = code;
@@ -1578,7 +1578,7 @@ async function selectGroup(code, doLoad) {
     await loadGroupData(code);
     hideLoading();
   }
-  renderGroupList();
+  if (!skipRender) renderGroupList();
 }
 
 async function loadGroupData(code) {
@@ -1643,7 +1643,7 @@ window.createGroup = async function() {
     myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodesNew.includes(g.code));
     document.getElementById('newGroupName').value = '';
     subjects = []; tasks = [];
-    await selectGroup(code, false);
+    await selectGroup(code, false, true);
     renderGroupList();
     showToast(s('toastGroupCreated') + ' — ' + code);
   } catch(e) { showToast(e.message); }
@@ -2014,13 +2014,15 @@ async function init() {
           currentRole = 'master';
           sessionStorage.setItem(SESSION_KEY, 'master');
           sessionStorage.setItem(SESSION_KEY + '_group', paramGroup);
-          await selectGroup(paramGroup, true);
+          // loadAllGroups を先に完了させて myGroups を確定してから selectGroup する
+          await loadAllGroups();
+          await selectGroup(paramGroup, true, true);
           ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
           document.getElementById('adminScreen').classList.add('visible');
           applyAdminRole();
           applyLangUI();
+          renderGroupList();
           hideLoading();
-          loadAllGroups().then(() => renderGroupList());
           return;
         }
         showLogin();
@@ -2057,8 +2059,9 @@ async function init() {
       document.getElementById('adminScreen').classList.add('visible');
       applyAdminRole();
       applyLangUI();
+      await loadAllGroups();
+      renderGroupList();
       hideLoading();
-      loadAllGroups().then(() => renderGroupList());
       return;
     } catch(e) {
       sessionStorage.removeItem(SESSION_KEY);
