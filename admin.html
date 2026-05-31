@@ -2087,21 +2087,17 @@ async function init() {
           sessionStorage.setItem(SESSION_KEY, 'master');
           sessionStorage.setItem(SESSION_KEY + '_group', masterSavedGroup);
           await loadAllGroups();
-          // 複数グループがあればグループ選択ダイアログを表示、1つなら直接入室
-          if (myGroups.length > 1) {
-            hideLoading();
-            showLogin();
-            showMasterGroupSelect();
-            applyLangUI();
-            return;
-          }
-          if (myGroups.length === 1) {
-            await selectGroup(myGroups[0].code, true);
+          // 直前に使用していたグループに直接入室（複数グループ選択は不要）
+          const targetCode = myGroups.find(g => g.code === masterSavedGroup) ? masterSavedGroup
+            : myGroups.length > 0 ? myGroups[0].code : null;
+          if (targetCode) {
+            await selectGroup(targetCode, true, true);
           }
           ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
           document.getElementById('adminScreen').classList.add('visible');
           applyAdminRole();
           applyLangUI();
+          renderGroupList();
           hideLoading();
           return;
         }
