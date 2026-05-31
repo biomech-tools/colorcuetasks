@@ -1957,10 +1957,12 @@ async function init() {
   const paramGroup = new URLSearchParams(location.search).get('g');
   if (paramGroup) {
     try {
-      const snap = await getDoc(doc(db, 'groups', paramGroup));
+      const [snap, settingsSnap] = await Promise.all([
+        getDoc(doc(db, 'groups', paramGroup)),
+        getDoc(doc(db, 'groups', paramGroup, 'settings', 'main')),
+      ]);
       if (snap.exists()) {
         loginGroupCode = paramGroup;
-        const settingsSnap = await getDoc(doc(db, 'groups', paramGroup, 'settings', 'main'));
         const data = settingsSnap.exists() ? settingsSnap.data() : {};
         if (!data.master_pw || !data.recovery_code) {
           isFirstSetup = true;
@@ -1978,13 +1980,13 @@ async function init() {
           currentRole = 'master';
           sessionStorage.setItem(SESSION_KEY, 'master');
           sessionStorage.setItem(SESSION_KEY + '_group', paramGroup);
-          await loadAllGroups();
           await selectGroup(paramGroup, true);
           ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
           document.getElementById('adminScreen').classList.add('visible');
           applyAdminRole();
           applyLangUI();
           hideLoading();
+          loadAllGroups().then(() => renderGroupList());
           return;
         }
         showLogin();
@@ -2009,17 +2011,20 @@ async function init() {
     try {
       loginGroupCode = savedGroup;
       currentRole    = savedRole;
-      const snap = await getDoc(doc(db, 'groups', savedGroup, 'settings', 'main'));
-      systemSettings = snap.exists() ? snap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
-      await loadAllGroups();
-      if (myGroups.find(g => g.code === savedGroup)) {
-        await selectGroup(savedGroup, true);
-      }
+      const [settingsSnap, groupDataPromise] = await Promise.all([
+        getDoc(doc(db, 'groups', savedGroup, 'settings', 'main')),
+        loadGroupData(savedGroup),
+      ]);
+      systemSettings = settingsSnap.exists() ? settingsSnap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
+      activeGroupCode = savedGroup;
+      localStorage.setItem(SAVED_GROUP, savedGroup);
+      document.getElementById('currentGroupBadge').textContent = savedGroup;
       ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
       document.getElementById('adminScreen').classList.add('visible');
       applyAdminRole();
       applyLangUI();
       hideLoading();
+      loadAllGroups().then(() => renderGroupList());
       return;
     } catch(e) {
       sessionStorage.removeItem(SESSION_KEY);
@@ -2032,10 +2037,12 @@ async function init() {
   const masterSavedGroup = masterRemember ? localStorage.getItem(SAVED_GROUP) : null;
   if (masterSavedGroup) {
     try {
-      const snap = await getDoc(doc(db, 'groups', masterSavedGroup));
+      const [snap, settingsSnap] = await Promise.all([
+        getDoc(doc(db, 'groups', masterSavedGroup)),
+        getDoc(doc(db, 'groups', masterSavedGroup, 'settings', 'main')),
+      ]);
       if (snap.exists()) {
         loginGroupCode = masterSavedGroup;
-        const settingsSnap = await getDoc(doc(db, 'groups', masterSavedGroup, 'settings', 'main'));
         const data = settingsSnap.exists() ? settingsSnap.data() : {};
         if (data.master_pw && data.recovery_code) {
           systemSettings = data;
