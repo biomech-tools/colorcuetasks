@@ -216,12 +216,21 @@ service cloud.firestore {<br>
       </code>
     </div>
 
-    <!-- 初回セットアップ（パスワード未設定） -->
-    <div id="firstSetupPanel">
-      <div class="notice notice-warn" id="setupNotice" style="display:none">
-        初回セットアップです。次のステップでマスターパスワードを設定します。
+    <!-- グループコード入力（共通） -->
+    <div id="groupCodePanel">
+      <div class="form-row">
+        <label class="form-label" id="loginGroupCodeLabel"></label>
+        <input class="form-input" id="loginGroupCodeInput" type="text"
+               autocomplete="off" style="font-family:'SF Mono','Consolas',monospace;letter-spacing:0.08em;text-transform:uppercase"
+               onkeydown="if(event.key==='Enter')checkGroupCode()" oninput="this.value=this.value.toUpperCase()">
       </div>
-      <button class="btn btn-primary" id="firstSetupBtn" style="display:none" onclick="doFirstSetup()"></button>
+      <button class="btn btn-primary" id="groupCodeNextBtn" onclick="checkGroupCode()"></button>
+      <div class="form-error" id="groupCodeError"></div>
+    </div>
+
+    <!-- 初回セットアップ（パスワード未設定） -->
+    <div id="firstSetupPanel" style="display:none">
+      <button class="btn btn-primary" id="firstSetupBtn" onclick="doFirstSetup()"></button>
     </div>
 
     <!-- 通常ログイン -->
@@ -551,6 +560,9 @@ const STRINGS = {
     noGroup:               '未選択',
     rolemaster:            'MASTER',
     roleuser:              'USER',
+    loginGroupCodeLabel:   'グループコード',
+    loginGroupCodeNext:    '次へ',
+    loginGroupCodeError:   'グループコードが見つかりません',
     loginPwLabelMaster:    'マスターパスワード',
     loginPwLabelUser:      'ユーザーパスワード',
     loginBtn:              'ログイン',
@@ -677,6 +689,9 @@ const STRINGS = {
     noGroup:               'None',
     rolemaster:            'MASTER',
     roleuser:              'USER',
+    loginGroupCodeLabel:   'Group Code',
+    loginGroupCodeNext:    'Next',
+    loginGroupCodeError:   'Group code not found',
     loginPwLabelMaster:    'Master Password',
     loginPwLabelUser:      'User Password',
     loginBtn:              'Login',
@@ -802,6 +817,7 @@ let selectedRoleTab = 'master';
 let isFirstSetup    = false;
 let groups          = [];
 let activeGroupCode = null;
+let loginGroupCode  = null;  // ログイン時に入力したグループコード
 let subjects        = [];
 let tasks           = [];
 let systemSettings  = { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
@@ -878,6 +894,8 @@ function applyLangUI() {
   // Login
   set('backTopBtn',            'backTopBtn');
   set('backToLoginBtn',        'backToLoginBtn');
+  set('loginGroupCodeLabel',   'loginGroupCodeLabel');
+  set('groupCodeNextBtn',      'loginGroupCodeNext');
   set('loginBtn',              'loginBtn');
   set('firstSetupBtn',         'firstSetupBtn');
   set('forgotPwBtn',           'forgotPwBtn');
@@ -966,6 +984,44 @@ function set(id, key) {
   if (el) el.textContent = s(key);
 }
 
+// ---- GROUP CODE CHECK (ログイン前) ----
+window.checkGroupCode = async function() {
+  const code = document.getElementById('loginGroupCodeInput').value.trim().toUpperCase();
+  if (!code) return;
+  document.getElementById('groupCodeError').textContent = '';
+  showLoading();
+  try {
+    const snap = await getDoc(doc(db, 'groups', code));
+    if (!snap.exists()) {
+      document.getElementById('groupCodeError').textContent = s('loginGroupCodeError');
+      hideLoading(); return;
+    }
+    loginGroupCode = code;
+    // そのグループのsettingsを確認
+    const settingsSnap = await getDoc(doc(db, 'groups', code, 'settings', 'main'));
+    const data = settingsSnap.exists() ? settingsSnap.data() : {};
+    document.getElementById('groupCodePanel').style.display = 'none';
+    if (!data.master_pw || !data.recovery_code) {
+      // 初回セットアップ
+      isFirstSetup = true;
+      hideLoading();
+      showSetup();
+      showSetupStep(1);
+      applyLangUI();
+    } else {
+      systemSettings = data;
+      isFirstSetup   = false;
+      document.getElementById('firstSetupPanel').style.display  = 'none';
+      document.getElementById('normalLoginPanel').style.display = '';
+      hideLoading();
+      showLogin();
+    }
+  } catch(e) {
+    document.getElementById('groupCodeError').textContent = e.message;
+    hideLoading();
+  }
+};
+
 // ---- LOGIN ----
 window.switchRoleTab = function(role) {
   selectedRoleTab = role;
@@ -983,7 +1039,7 @@ window.doLogin = async function() {
   if (!pw) return;
   showLoading();
   try {
-    const snap = await getDoc(doc(db, 'system', 'settings'));
+    const snap = await getDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'));
     systemSettings = snap.exists() ? snap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
 
     if (selectedRoleTab === 'master') {
@@ -1000,6 +1056,7 @@ window.doLogin = async function() {
       currentRole = 'user';
     }
     sessionStorage.setItem(SESSION_KEY, currentRole);
+    sessionStorage.setItem(SESSION_KEY + '_group', loginGroupCode);
     await enterAdmin();
   } catch(e) {
     document.getElementById('loginError').textContent = e.message;
@@ -1058,9 +1115,9 @@ window.setupStep3Complete = async function() {
   }
   showLoading();
   try {
-    const existing = await getDoc(doc(db, 'system', 'settings'));
+    const existing = await getDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'));
     const existingUserPw = existing.exists() ? (existing.data().user_pw || DEFAULT_USER_PW) : DEFAULT_USER_PW;
-    await setDoc(doc(db, 'system', 'settings'), {
+    await setDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'), {
       master_pw:     pendingNewMasterPw,
       user_pw:       existingUserPw,
       recovery_code: pendingRecoveryCode,
@@ -1071,6 +1128,7 @@ window.setupStep3Complete = async function() {
     currentRole = 'master';
     isFirstSetup = false;
     sessionStorage.setItem(SESSION_KEY, 'master');
+    sessionStorage.setItem(SESSION_KEY + '_group', loginGroupCode);
     await enterAdmin();
   } catch(e) {
     document.getElementById('setup3Error').textContent = e.message;
@@ -1102,7 +1160,7 @@ window.forgotVerify = async function() {
   const code = document.getElementById('forgotCodeInput').value.trim();
   showLoading();
   try {
-    const snap = await getDoc(doc(db, 'system', 'settings'));
+    const snap = await getDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'));
     if (!snap.exists()) { document.getElementById('forgotCodeError').textContent = s('forgotCodeError'); hideLoading(); return; }
     systemSettings = snap.data();
     if (code !== systemSettings.recovery_code) {
@@ -1126,15 +1184,13 @@ window.forgotReset = async function() {
   const pw2 = document.getElementById('forgotNewPwConfirmInput').value.trim();
   if (pw.length < 4) { document.getElementById('forgotNewPwError').textContent = s('forgotErrShort'); return; }
   if (pw !== pw2)    { document.getElementById('forgotNewPwError').textContent = s('forgotErrMatch'); return; }
-  // Generate new recovery code after reset
   const newCode = generateRecoveryCode();
   showLoading();
   try {
-    await setDoc(doc(db, 'system', 'settings'), { master_pw: pw, recovery_code: newCode }, { merge: true });
+    await setDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'), { master_pw: pw, recovery_code: newCode }, { merge: true });
     systemSettings.master_pw     = pw;
     systemSettings.recovery_code = newCode;
     hideLoading();
-    // Show new recovery code
     alert(currentLang === 'ja'
       ? `パスワードをリセットしました。\n\n新しいリカバリーコード：\n${newCode}\n\n必ず保存してください。`
       : `Password has been reset.\n\nNew recovery code:\n${newCode}\n\nPlease save it now.`);
@@ -1149,9 +1205,14 @@ window.forgotReset = async function() {
 // ---- ENTER ADMIN ----
 async function enterAdmin() {
   await loadAllGroups();
-  const savedCode = localStorage.getItem(SAVED_GROUP);
-  if (savedCode && groups.find(g => g.code === savedCode)) {
-    await selectGroup(savedCode, true);
+  // ログイン時のグループコードを優先的に選択
+  if (loginGroupCode && groups.find(g => g.code === loginGroupCode)) {
+    await selectGroup(loginGroupCode, true);
+  } else {
+    const savedCode = localStorage.getItem(SAVED_GROUP);
+    if (savedCode && groups.find(g => g.code === savedCode)) {
+      await selectGroup(savedCode, true);
+    }
   }
   ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
   document.getElementById('adminScreen').classList.add('visible');
@@ -1171,6 +1232,7 @@ function applyAdminRole() {
 
 window.goBack = function() {
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_KEY + '_group');
   location.href = 'index.html';
 };
 
@@ -1493,7 +1555,7 @@ window.saveMasterPw = async function() {
   if (pw !== pw2)    { document.getElementById('masterPwChangeError').textContent = s('masterPwChangeErrMatch'); return; }
   showLoading();
   try {
-    await setDoc(doc(db, 'system', 'settings'), { master_pw: pw }, { merge: true });
+    await setDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'), { master_pw: pw }, { merge: true });
     systemSettings.master_pw = pw;
     document.getElementById('newMasterPwInput').value        = '';
     document.getElementById('newMasterPwConfirmInput').value = '';
@@ -1508,7 +1570,7 @@ window.saveUserPw = async function() {
   if (!newPw) { showToast(s('pwRequired')); return; }
   showLoading();
   try {
-    await setDoc(doc(db, 'system', 'settings'), { user_pw: newPw }, { merge: true });
+    await setDoc(doc(db, 'groups', loginGroupCode, 'settings', 'main'), { user_pw: newPw }, { merge: true });
     systemSettings.user_pw = newPw;
     document.getElementById('currentPwVal').textContent = newPw;
     document.getElementById('newPwInput').value = '';
@@ -1557,33 +1619,18 @@ async function init() {
   showLoading();
   applyLangUI();
 
-  try {
-    const snap = await getDoc(doc(db, 'system', 'settings'));
-
-    const data = snap.exists() ? snap.data() : {};
-    if (!data.master_pw || !data.recovery_code) {
-      // 初回セットアップ：master_pwまたはrecovery_codeが未設定 → 直接セットアップウィザードへ
-      isFirstSetup = true;
-      hideLoading();
-      showSetup();
-      showSetupStep(1);
-      applyLangUI();
-      return;
-    }
-
-    systemSettings = snap.data();
-    isFirstSetup   = false;
-    document.getElementById('firstSetupPanel').style.display  = 'none';
-    document.getElementById('normalLoginPanel').style.display = '';
-
-    // セッション復元
-    const savedRole = sessionStorage.getItem(SESSION_KEY);
-    if (savedRole) {
-      currentRole = savedRole;
+  // セッション復元
+  const savedRole  = sessionStorage.getItem(SESSION_KEY);
+  const savedGroup = sessionStorage.getItem(SESSION_KEY + '_group');
+  if (savedRole && savedGroup) {
+    try {
+      loginGroupCode = savedGroup;
+      currentRole    = savedRole;
+      const snap = await getDoc(doc(db, 'groups', savedGroup, 'settings', 'main'));
+      systemSettings = snap.exists() ? snap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
       await loadAllGroups();
-      const savedCode = localStorage.getItem(SAVED_GROUP);
-      if (savedCode && groups.find(g => g.code === savedCode)) {
-        await selectGroup(savedCode, true);
+      if (groups.find(g => g.code === savedGroup)) {
+        await selectGroup(savedGroup, true);
       }
       ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
       document.getElementById('adminScreen').classList.add('visible');
@@ -1591,24 +1638,22 @@ async function init() {
       applyLangUI();
       hideLoading();
       return;
+    } catch(e) {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY + '_group');
     }
+  }
 
-    hideLoading();
-    showLogin();
+  hideLoading();
+  showLogin();
+  applyLangUI();
 
+  // Firestore接続テスト（rulesNotice表示用）
+  try {
+    await getDoc(doc(db, 'groups', '__probe__'));
   } catch(e) {
-    hideLoading();
     if (e.code === 'permission-denied' || e.message.includes('permission') || e.message.includes('PERMISSION')) {
-      document.getElementById('rulesNotice').style.display     = 'block';
-      document.getElementById('normalLoginPanel').style.display = 'none';
-      document.getElementById('firstSetupPanel').style.display  = 'none';
-      showLogin();
-    } else {
-      // Firestore到達不能でも初回セットアップとして扱う
-      isFirstSetup = true;
-      showSetup();
-      showSetupStep(1);
-      applyLangUI();
+      document.getElementById('rulesNotice').style.display = 'block';
     }
   }
 }
