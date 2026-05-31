@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<title>Admin – ColorCue Tasks</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -10,660 +10,1610 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', system-ui, sans-serif;
     background: #f0f2f5;
     min-height: 100vh;
-    padding: 16px 14px 32px;
+    padding: 16px 14px 40px;
   }
 
-  .top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: #555;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
-    padding: 8px 12px 8px 8px;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.visible { display: block; }
+  .screen-center { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px 20px; }
+  .screen-center.visible { display: flex; }
 
-  .lang-switcher {
-    display: flex;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-    border: 1.5px solid #dde1e7;
-    background: #fff;
-  }
-  .lang-btn {
-    padding: 0 10px;
-    height: 36px;
-    border: none;
-    background: transparent;
-    font-size: 12px;
-    font-weight: 700;
-    color: #aaa;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    letter-spacing: 0.03em;
-  }
-  .lang-btn.active {
-    background: #1a1a2e;
-    color: #fff;
-  }
+  /* CARD */
+  .card { background: #fff; border-radius: 20px; padding: 32px 24px; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
+  .card-logo { text-align: center; margin-bottom: 24px; }
+  .card-logo-title { font-size: 20px; font-weight: 800; color: #1a1a2e; }
+  .card-logo-sub   { font-size: 11px; color: #8a9ab0; margin-top: 2px; }
+  .card-title { font-size: 17px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px; }
+  .card-desc  { font-size: 13px; color: #777; margin-bottom: 20px; line-height: 1.6; }
+
+  .top-lang { width: 100%; max-width: 400px; display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .lang-switcher { display: flex; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.10); border: 1.5px solid #dde1e7; background: #fff; }
+  .lang-btn { padding: 0 10px; height: 36px; border: none; background: transparent; font-size: 12px; font-weight: 700; color: #aaa; cursor: pointer; transition: background 0.15s, color 0.15s; letter-spacing: 0.03em; }
+  .lang-btn.active { background: #1a1a2e; color: #fff; }
   .lang-btn:first-child { border-right: 1.5px solid #dde1e7; }
 
-  .page-title {
-    font-size: 17px;
-    font-weight: 800;
-    color: #1a1a2e;
-    margin-bottom: 18px;
-  }
+  /* ROLE TABS */
+  .role-tabs { display: flex; background: #f0f2f5; border-radius: 10px; padding: 3px; margin-bottom: 20px; gap: 3px; }
+  .role-tab { flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #888; transition: background 0.15s, color 0.15s; }
+  .role-tab.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.10); }
+  .role-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; border-radius: 20px; padding: 2px 8px; margin-left: 4px; vertical-align: middle; }
+  .role-badge.master { background: #c62828; color: #fff; }
+  .role-badge.user   { background: #1a56a0; color: #fff; }
 
-  .menu-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
+  /* NOTICE / ALERT */
+  .notice { border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; font-weight: 500; line-height: 1.5; }
+  .notice-warn  { background: #fff8e1; border: 1.5px solid #ffe082; color: #5d4037; }
+  .notice-info  { background: #e8f4fd; border: 1.5px solid #90caf9; color: #1a56a0; }
+  .notice-error { background: #fff8f8; border: 1.5px solid #ef9a9a; color: #b71c1c; }
+  .notice-success { background: #f1faf2; border: 1.5px solid #a5d6a7; color: #2e7d32; }
+
+  /* FORMS */
+  .form-label { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 6px; display: block; letter-spacing: 0.04em; text-transform: uppercase; }
+  .form-row   { margin-bottom: 14px; }
+  .form-row .form-label { font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .form-input { width: 100%; padding: 13px 14px; border: 1.5px solid #dde1e7; border-radius: 10px; font-size: 16px; outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s; background: #fff; color: #1a1a2e; }
+  .form-input:focus { border-color: #1a1a2e; box-shadow: 0 0 0 3px rgba(26,26,46,0.08); }
+  .form-input-sm { width: 100%; padding: 11px 13px; border: 1.5px solid #dde1e7; border-radius: 10px; font-size: 15px; outline: none; font-family: inherit; transition: border-color 0.2s; background: #fff; color: #1a1a2e; }
+  .form-input-sm:focus { border-color: #1a1a2e; }
+  .form-textarea { width: 100%; padding: 11px 13px; border: 1.5px solid #dde1e7; border-radius: 10px; font-size: 15px; outline: none; font-family: inherit; transition: border-color 0.2s; background: #fff; resize: vertical; min-height: 64px; }
+  .form-textarea:focus { border-color: #1a1a2e; }
+  .form-select { width: 100%; padding: 11px 13px; border: 1.5px solid #dde1e7; border-radius: 10px; font-size: 15px; outline: none; font-family: inherit; transition: border-color 0.2s; background: #fff; }
+  .form-select:focus { border-color: #1a1a2e; }
+  .form-hint { font-size: 11px; color: #8a9ab0; margin-top: 5px; }
+  .form-row-inline { display: flex; gap: 8px; }
+  .form-row-inline .form-select { flex: 1; }
+  .input-error { border-color: #e53935 !important; }
+
+  /* BUTTONS */
+  .btn { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; padding: 12px 18px; transition: opacity 0.15s; -webkit-tap-highlight-color: transparent; }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: #1a1a2e; color: #fff; width: 100%; margin-top: 4px; padding: 14px; }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-secondary { background: #fff; color: #555; width: 100%; margin-top: 4px; padding: 12px; border: 1.5px solid #dde1e7; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-danger  { background: #d32f2f; color: #fff; padding: 7px 12px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; }
+  .btn-save-sm { background: #1a1a2e; color: #fff; padding: 9px 16px; font-size: 13px; border-radius: 8px; border: none; cursor: pointer; }
+
+  .form-error { color: #c62828; font-size: 13px; font-weight: 500; text-align: center; margin-top: 8px; min-height: 18px; }
+  .text-link { background: none; border: none; color: #1a56a0; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; }
+  .center-row { text-align: center; margin-top: 14px; }
+
+  /* RECOVERY CODE DISPLAY */
+  .recovery-code-box {
+    background: #1a1a2e; color: #fff; border-radius: 14px; padding: 20px;
+    text-align: center; margin: 16px 0;
   }
-  .menu-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px 14px;
-    text-align: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    border: 2px solid transparent;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
+  .recovery-code-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+  .recovery-code-value { font-family: 'SF Mono','Consolas',monospace; font-size: 26px; font-weight: 800; letter-spacing: 0.18em; color: #fff; line-height: 1; word-break: break-all; }
+  .recovery-code-hint  { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 10px; line-height: 1.5; }
+
+  /* PROGRESS STEPS */
+  .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 24px; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; transition: background 0.2s; }
+  .step-dot.done    { background: #2e7d32; color: #fff; }
+  .step-dot.active  { background: #1a1a2e; color: #fff; }
+  .step-dot.pending { background: #dde1e7; color: #aaa; }
+  .step-line { flex: 1; height: 2px; background: #dde1e7; max-width: 32px; }
+  .step-line.done { background: #2e7d32; }
+
+  /* ADMIN MAIN */
+  .admin-screen { display: none; }
+  .admin-screen.visible { display: block; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .back-link { display: inline-flex; align-items: center; gap: 4px; color: #555; font-size: 14px; font-weight: 500; text-decoration: none; padding: 8px 12px 8px 8px; border-radius: 8px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.08); cursor: pointer; border: none; }
+  .page-title { font-size: 17px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
+  .page-role-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .page-role-pill { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; border-radius: 20px; padding: 3px 12px; }
+  .page-role-pill.master { background: #c62828; color: #fff; }
+  .page-role-pill.user   { background: #1a56a0; color: #fff; }
+  .group-badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+  .group-badge { font-family: 'SF Mono','Consolas',monospace; font-size: 14px; font-weight: 800; background: #1a1a2e; color: #fff; border-radius: 8px; padding: 4px 12px; letter-spacing: 0.1em; }
+  .group-badge-label { font-size: 12px; color: #888; font-weight: 500; }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .menu-card { background: #fff; border-radius: 14px; padding: 18px 14px; text-align: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: 2px solid transparent; transition: border-color 0.15s, box-shadow 0.15s; -webkit-tap-highlight-color: transparent; }
   .menu-card.active-menu { border-color: #1a1a2e; box-shadow: 0 4px 14px rgba(26,26,46,0.12); }
   .menu-card .icon { font-size: 26px; margin-bottom: 6px; }
   .menu-card .label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
 
-  .section {
-    display: none;
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    margin-bottom: 12px;
-  }
+  .section { display: none; background: #fff; border-radius: 14px; padding: 18px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 12px; }
   .section.active { display: block; }
   .section-title { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
 
-  .form-row { margin-bottom: 12px; }
-  .form-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
-  .form-input, .form-textarea, .form-select {
-    width: 100%;
-    padding: 11px 13px;
-    border: 1.5px solid #dde1e7;
-    border-radius: 10px;
-    font-size: 15px;
-    outline: none;
-    font-family: inherit;
-    transition: border-color 0.2s;
-    background: #fff;
-  }
-  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: #1a1a2e; }
-  .form-textarea { resize: vertical; min-height: 64px; }
-  .form-row-inline { display: flex; gap: 8px; }
-  .form-row-inline .form-select { flex: 1; }
-
-  .btn {
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 12px 18px;
-    transition: opacity 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .btn:active { opacity: 0.8; }
-  .btn-primary { background: #1a1a2e; color: #fff; width: 100%; margin-top: 10px; }
-  .btn-danger { background: #d32f2f; color: #fff; padding: 7px 12px; font-size: 13px; border-radius: 8px; }
-  .btn-save-small { background: #1a1a2e; color: #fff; padding: 9px 16px; font-size: 13px; border-radius: 8px; }
-
-  .subject-item {
-    border: 1.5px solid #e8eaed;
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    background: #fafafa;
-  }
-  .subject-item-header {
-    font-size: 12px;
-    font-weight: 600;
-    color: #999;
-    margin-bottom: 8px;
-  }
-  .subject-name-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .subject-name-row .form-input { flex: 1; margin-bottom: 0; }
-
-  .task-list-scroll {
-    max-height: calc(3 * 72px);
-    overflow-y: auto;
-    margin-bottom: 0;
-    scrollbar-width: thin;
-    scrollbar-color: #c8cdd5 transparent;
-  }
+  .subject-item { border: 1.5px solid #e8eaed; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: #fafafa; }
+  .subject-item-header { font-size: 12px; font-weight: 600; color: #999; margin-bottom: 8px; }
+  .subject-name-row { display: flex; gap: 8px; align-items: center; }
+  .subject-name-row .form-input-sm { flex: 1; }
+  .task-list-scroll { max-height: calc(3 * 72px); overflow-y: auto; margin-bottom: 0; scrollbar-width: thin; scrollbar-color: #c8cdd5 transparent; }
   .task-list-scroll::-webkit-scrollbar { width: 4px; }
-  .task-list-scroll::-webkit-scrollbar-track { background: transparent; }
   .task-list-scroll::-webkit-scrollbar-thumb { background: #c8cdd5; border-radius: 4px; }
-
-  .task-item {
-    border: 1px solid #e8eaed;
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    background: #fff;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-    min-height: 64px;
-  }
+  .task-item { border: 1px solid #e8eaed; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: #fff; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: 64px; }
   .task-item-info { flex: 1; }
-  .task-item-content { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 3px; }
+  .task-item-content  { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 3px; }
   .task-item-deadline { font-size: 12px; color: #777; }
-
-  .add-task-box {
-    background: #f7f8fa;
-    border-radius: 10px;
-    padding: 14px;
-    margin-top: 12px;
-    border: 1.5px dashed #c8cdd5;
-  }
+  .add-task-box { background: #f7f8fa; border-radius: 10px; padding: 14px; margin-top: 12px; border: 1.5px dashed #c8cdd5; }
   .add-task-box .section-title { font-size: 13px; color: #777; margin-bottom: 10px; }
-
   .no-tasks { font-size: 13px; color: #bbb; text-align: center; padding: 10px 0; }
-
-  .subject-count-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 14px;
-  }
+  .subject-count-row { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
   .subject-count-row label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
   .subject-count-row .form-select { max-width: 100px; }
-  .subject-count-row .btn-save-small { white-space: nowrap; }
 
-  .reset-section {
-    margin-top: 16px;
-    padding: 14px;
-    border: 1.5px solid #ffcdd2;
-    border-radius: 10px;
-    background: #fff8f8;
-  }
+  .code-display { background: #1a1a2e; color: #fff; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 16px; }
+  .code-display-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+  .code-display-number { font-family: 'SF Mono','Consolas',monospace; font-size: 52px; font-weight: 800; letter-spacing: 0.2em; color: #fff; line-height: 1; }
+  .code-display-hint { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 10px; }
+
+  .group-list { margin-bottom: 14px; }
+  .group-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; background: #fafafa; border: 1.5px solid #e8eaed; border-radius: 10px; margin-bottom: 8px; }
+  .group-item.is-active { border-color: #1a56a0; background: #f0f7ff; }
+  .group-item-info { flex: 1; }
+  .group-item-code { font-family: 'SF Mono','Consolas',monospace; font-size: 22px; font-weight: 800; color: #1a1a2e; letter-spacing: 0.12em; }
+  .group-item-name { font-size: 12px; color: #888; margin-top: 2px; }
+  .group-item-actions { display: flex; gap: 6px; }
+  .btn-select { background: #1a56a0; color: #fff; padding: 6px 14px; font-size: 12px; font-weight: 700; border: none; border-radius: 7px; cursor: pointer; }
+  .btn-select.current { background: #2e7d32; cursor: default; }
+  .new-group-box { background: #f7f8fa; border-radius: 10px; padding: 14px; border: 1.5px dashed #c8cdd5; }
+  .new-group-box .section-title { font-size: 13px; color: #777; margin-bottom: 10px; }
+
+  .pw-current-row { display: flex; align-items: center; gap: 8px; background: #f0f7ff; border: 1.5px solid #c8e0f8; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+  .pw-current-label { font-size: 12px; font-weight: 700; color: #1a56a0; white-space: nowrap; }
+  .pw-current-val   { font-family: 'SF Mono','Consolas',monospace; font-size: 16px; font-weight: 800; color: #1a1a2e; letter-spacing: 0.08em; }
+
+  .reset-section { margin-top: 16px; padding: 14px; border: 1.5px solid #ffcdd2; border-radius: 10px; background: #fff8f8; }
   .reset-section-title { font-size: 13px; font-weight: 700; color: #c62828; margin-bottom: 8px; }
   .reset-section p { font-size: 12px; color: #888; margin-bottom: 10px; }
   .btn-reset { background: #d32f2f; color: #fff; width: 100%; padding: 10px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
 
-  .toast {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: #1a1a2e;
-    color: #fff;
-    padding: 11px 22px;
-    border-radius: 24px;
-    font-size: 14px;
-    font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.25s, transform 0.25s;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 500;
-  }
+  .master-pw-section { background: #fff8e1; border: 1.5px solid #ffe082; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .master-pw-section-title { font-size: 13px; font-weight: 700; color: #5d4037; margin-bottom: 10px; }
+
+  /* LOADING */
+  .loading-overlay { position: fixed; inset: 0; background: rgba(240,242,245,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 200; }
+  .loading-overlay.hidden { display: none; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #dde1e7; border-top-color: #1a1a2e; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; font-weight: 500; color: #888; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1a2e; color: #fff; padding: 11px 22px; border-radius: 24px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; z-index: 500; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <a class="back-link" href="index.html">&#8592; <span id="backLinkText"></span></a>
-  <div class="lang-switcher">
-    <button class="lang-btn" id="btn-jp" onclick="setLang('ja')">JP</button>
-    <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
-  </div>
-</div>
-<div class="page-title" id="pageTitle"></div>
-
-<div class="menu-grid">
-  <div class="menu-card" id="mc-title" onclick="showSection('title')">
-    <div class="icon">&#9999;&#65039;</div>
-    <div class="label" id="mc-title-label"></div>
-  </div>
-  <div class="menu-card" id="mc-name" onclick="showSection('name')">
-    <div class="icon">&#128218;</div>
-    <div class="label" id="mc-name-label"></div>
-  </div>
-  <div class="menu-card" id="mc-task" onclick="showSection('task')">
-    <div class="icon">&#128203;</div>
-    <div class="label" id="mc-task-label"></div>
-  </div>
-  <div class="menu-card" id="mc-reset" onclick="showSection('reset')">
-    <div class="icon">&#128260;</div>
-    <div class="label" id="mc-reset-label"></div>
-  </div>
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">読み込み中...</div>
 </div>
 
-<div class="section" id="sec-title">
-  <div class="section-title" id="sec-title-heading"></div>
-  <div class="form-row">
-    <label class="form-label" id="labelTitle"></label>
-    <input class="form-input" id="newTitle" placeholder="">
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="screen-center" id="loginScreen">
+  <div class="top-lang">
+    <div class="lang-switcher">
+      <button class="lang-btn" id="login-btn-jp" onclick="setLang('ja')">JP</button>
+      <button class="lang-btn" id="login-btn-en" onclick="setLang('en')">EN</button>
+    </div>
   </div>
-  <button class="btn btn-primary" onclick="saveTitle()" id="saveTitleBtn"></button>
+  <div class="card">
+    <div class="card-logo">
+      <div class="card-logo-title">ColorCue Tasks</div>
+      <div class="card-logo-sub">Admin Panel</div>
+    </div>
+
+    <div class="notice notice-error" id="rulesNotice" style="display:none">
+      Firestoreのセキュリティルールが原因でアクセスできません。<br>
+      Firebase Console → Firestore → ルール → 以下に変更して「公開」してください：<br><br>
+      <code style="font-size:11px;line-height:1.8;display:block;background:#fff;padding:8px;border-radius:6px;color:#333">
+rules_version = '2';<br>
+service cloud.firestore {<br>
+&nbsp;&nbsp;match /databases/{database}/documents {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;match /{document=**} {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if true;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+      </code>
+    </div>
+
+    <!-- 初回セットアップ（パスワード未設定） -->
+    <div id="firstSetupPanel">
+      <div class="notice notice-warn" id="setupNotice" style="display:none">
+        初回セットアップです。次のステップでマスターパスワードを設定します。
+      </div>
+      <button class="btn btn-primary" id="firstSetupBtn" style="display:none" onclick="doFirstSetup()"></button>
+    </div>
+
+    <!-- 通常ログイン -->
+    <div id="normalLoginPanel" style="display:none">
+      <div class="role-tabs" id="roleTabs">
+        <button class="role-tab active" id="tabMasterBtn" onclick="switchRoleTab('master')">マスター <span class="role-badge master">MASTER</span></button>
+        <button class="role-tab" id="tabUserBtn" onclick="switchRoleTab('user')">ユーザー <span class="role-badge user">USER</span></button>
+      </div>
+      <div class="form-row">
+        <label class="form-label" id="loginPwLabel"></label>
+        <input class="form-input" id="loginPwInput" type="password" placeholder="••••••••"
+               autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()"></button>
+      <div class="form-error" id="loginError"></div>
+      <div class="center-row" id="forgotPwRow">
+        <button class="text-link" id="forgotPwBtn" onclick="showForgotPw()"></button>
+      </div>
+    </div>
+
+    <div class="center-row">
+      <button class="text-link" onclick="location.href='index.html'" id="backTopBtn"></button>
+    </div>
+  </div>
 </div>
 
-<div class="section" id="sec-name">
-  <div class="section-title" id="sec-name-heading"></div>
-  <div class="subject-count-row">
-    <label id="subjectCountLabel"></label>
-    <select class="form-select" id="subjectCount">
-      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-      <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-      <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-      <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-    </select>
-    <button class="btn btn-save-small" onclick="applySubjectCount()" id="applyCountBtn"></button>
+<!-- ===== SETUP WIZARD SCREEN (初回PW設定) ===== -->
+<div class="screen-center" id="setupScreen">
+  <div class="top-lang">
+    <div class="lang-switcher">
+      <button class="lang-btn" id="setup-btn-jp" onclick="setLang('ja')">JP</button>
+      <button class="lang-btn" id="setup-btn-en" onclick="setLang('en')">EN</button>
+    </div>
   </div>
-  <div id="nameList"></div>
+  <div class="card">
+    <div class="card-logo">
+      <div class="card-logo-title">ColorCue Tasks</div>
+      <div class="card-logo-sub" id="setupSubtitle"></div>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="steps" id="setupSteps">
+      <div class="step-dot active" id="step1dot">1</div>
+      <div class="step-line" id="step1line"></div>
+      <div class="step-dot pending" id="step2dot">2</div>
+      <div class="step-line" id="step2line"></div>
+      <div class="step-dot pending" id="step3dot">3</div>
+    </div>
+
+    <!-- Step 1: マスターPW設定 -->
+    <div id="setupStep1">
+      <div class="card-title" id="setup1Title"></div>
+      <div class="card-desc"  id="setup1Desc"></div>
+      <div class="form-row">
+        <label class="form-label" id="setup1PwLabel"></label>
+        <input class="form-input-sm" id="setup1PwInput" type="text" autocomplete="off"
+               placeholder="" oninput="onSetupPwInput()">
+        <div class="form-hint" id="setup1PwHint"></div>
+      </div>
+      <div class="form-row">
+        <label class="form-label" id="setup1PwConfirmLabel"></label>
+        <input class="form-input-sm" id="setup1PwConfirmInput" type="text" autocomplete="off"
+               placeholder="" oninput="onSetupPwInput()">
+      </div>
+      <div class="form-error" id="setup1Error"></div>
+      <button class="btn btn-primary" id="setup1NextBtn" onclick="setupStep1Next()" disabled></button>
+    </div>
+
+    <!-- Step 2: リカバリーコード確認 -->
+    <div id="setupStep2" style="display:none">
+      <div class="card-title" id="setup2Title"></div>
+      <div class="card-desc"  id="setup2Desc"></div>
+      <div class="recovery-code-box">
+        <div class="recovery-code-label" id="setup2CodeLabel"></div>
+        <div class="recovery-code-value" id="setup2CodeValue"></div>
+        <div class="recovery-code-hint" id="setup2CodeHint"></div>
+      </div>
+      <div class="notice notice-warn" id="setup2Warn"></div>
+      <button class="btn btn-primary" id="setup2NextBtn" onclick="setupStep2Next()"></button>
+    </div>
+
+    <!-- Step 3: リカバリーコード確認入力 -->
+    <div id="setupStep3" style="display:none">
+      <div class="card-title" id="setup3Title"></div>
+      <div class="card-desc"  id="setup3Desc"></div>
+      <div class="form-row">
+        <label class="form-label" id="setup3CodeLabel"></label>
+        <input class="form-input-sm" id="setup3CodeInput" type="text" autocomplete="off"
+               placeholder="" style="font-family:'SF Mono','Consolas',monospace;letter-spacing:0.08em">
+      </div>
+      <div class="form-error" id="setup3Error"></div>
+      <button class="btn btn-primary" id="setup3CompleteBtn" onclick="setupStep3Complete()"></button>
+    </div>
+  </div>
 </div>
 
-<div class="section" id="sec-task">
-  <div class="section-title" id="sec-task-heading"></div>
-  <div id="taskList"></div>
+<!-- ===== FORGOT PW SCREEN ===== -->
+<div class="screen-center" id="forgotScreen">
+  <div class="top-lang">
+    <div class="lang-switcher">
+      <button class="lang-btn" id="forgot-btn-jp" onclick="setLang('ja')">JP</button>
+      <button class="lang-btn" id="forgot-btn-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-logo">
+      <div class="card-logo-title">ColorCue Tasks</div>
+      <div class="card-logo-sub" id="forgotSubtitle"></div>
+    </div>
+    <div class="card-title" id="forgotTitle"></div>
+    <div class="card-desc"  id="forgotDesc"></div>
+
+    <!-- Step A: リカバリーコード入力 -->
+    <div id="forgotStepA">
+      <div class="form-row">
+        <label class="form-label" id="forgotCodeLabel"></label>
+        <input class="form-input-sm" id="forgotCodeInput" type="text" autocomplete="off"
+               style="font-family:'SF Mono','Consolas',monospace;letter-spacing:0.08em">
+      </div>
+      <div class="form-error" id="forgotCodeError"></div>
+      <button class="btn btn-primary" id="forgotVerifyBtn" onclick="forgotVerify()"></button>
+    </div>
+
+    <!-- Step B: 新PW設定 -->
+    <div id="forgotStepB" style="display:none">
+      <div class="notice notice-success" id="forgotVerifiedMsg"></div>
+      <div class="form-row">
+        <label class="form-label" id="forgotNewPwLabel"></label>
+        <input class="form-input-sm" id="forgotNewPwInput" type="text" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label class="form-label" id="forgotNewPwConfirmLabel"></label>
+        <input class="form-input-sm" id="forgotNewPwConfirmInput" type="text" autocomplete="off">
+      </div>
+      <div class="form-error" id="forgotNewPwError"></div>
+      <button class="btn btn-primary" id="forgotResetBtn" onclick="forgotReset()"></button>
+    </div>
+
+    <div class="center-row" style="margin-top:16px">
+      <button class="text-link" onclick="showLogin()" id="backToLoginBtn"></button>
+    </div>
+  </div>
 </div>
 
-<div class="section" id="sec-reset">
-  <div class="section-title" id="sec-reset-heading"></div>
-  <div class="reset-section">
-    <div class="reset-section-title" id="resetSubmitTitle"></div>
-    <p id="resetSubmitDesc"></p>
-    <button class="btn-reset" onclick="resetSubmits()" id="resetSubmitBtn"></button>
+<!-- ===== ADMIN MAIN ===== -->
+<div class="admin-screen" id="adminScreen">
+  <div class="top-bar">
+    <button class="back-link" onclick="goBack()">&#8592; <span id="backLinkText"></span></button>
+    <div class="lang-switcher">
+      <button class="lang-btn" id="btn-jp" onclick="setLang('ja')">JP</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
   </div>
-  <div class="reset-section" style="margin-top:12px;">
-    <div class="reset-section-title" id="resetAllTitle"></div>
-    <p id="resetAllDesc"></p>
-    <button class="btn-reset" onclick="resetAll()" id="resetAllBtn"></button>
+  <div class="page-title" id="pageTitle"></div>
+  <div class="page-role-row">
+    <div class="page-role-pill" id="pageRolePill"></div>
+    <div class="group-badge-row" style="margin-bottom:0">
+      <div class="group-badge-label" id="currentGroupLabel"></div>
+      <div class="group-badge" id="currentGroupBadge"></div>
+    </div>
+  </div>
+
+  <!-- MASTER MENU -->
+  <div class="menu-grid" id="masterMenu">
+    <div class="menu-card" id="mc-groups" onclick="showSection('groups')">
+      <div class="icon">&#128273;</div>
+      <div class="label" id="mc-groups-label"></div>
+    </div>
+    <div class="menu-card" id="mc-title" onclick="showSection('title')">
+      <div class="icon">&#9999;&#65039;</div>
+      <div class="label" id="mc-title-label"></div>
+    </div>
+    <div class="menu-card" id="mc-name" onclick="showSection('name')">
+      <div class="icon">&#128218;</div>
+      <div class="label" id="mc-name-label"></div>
+    </div>
+    <div class="menu-card" id="mc-task" onclick="showSection('task')">
+      <div class="icon">&#128203;</div>
+      <div class="label" id="mc-task-label"></div>
+    </div>
+    <div class="menu-card" id="mc-pw" onclick="showSection('pw')">
+      <div class="icon">&#128274;</div>
+      <div class="label" id="mc-pw-label"></div>
+    </div>
+    <div class="menu-card" id="mc-reset" onclick="showSection('reset')">
+      <div class="icon">&#128260;</div>
+      <div class="label" id="mc-reset-label"></div>
+    </div>
+  </div>
+
+  <!-- USER MENU -->
+  <div class="menu-grid" id="userMenu" style="display:none">
+    <div class="menu-card" id="mc-task-u" onclick="showSection('task')">
+      <div class="icon">&#128203;</div>
+      <div class="label" id="mc-task-u-label"></div>
+    </div>
+  </div>
+
+  <!-- GROUPS -->
+  <div class="section" id="sec-groups">
+    <div class="section-title" id="sec-groups-heading"></div>
+    <div class="group-list" id="groupList"></div>
+    <div class="new-group-box">
+      <div class="section-title" id="newGroupBoxTitle"></div>
+      <div class="form-row">
+        <label class="form-label" id="newGroupNameLabel"></label>
+        <input class="form-input-sm" id="newGroupName" placeholder="">
+      </div>
+      <button class="btn btn-primary" id="createGroupBtn" onclick="createGroup()"></button>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="section" id="sec-title">
+    <div class="section-title" id="sec-title-heading"></div>
+    <div class="form-row">
+      <label class="form-label" id="labelTitle"></label>
+      <input class="form-input-sm" id="newTitle" placeholder="">
+    </div>
+    <button class="btn btn-primary" id="saveTitleBtn" onclick="saveTitle()"></button>
+  </div>
+
+  <!-- SUBJECTS -->
+  <div class="section" id="sec-name">
+    <div class="section-title" id="sec-name-heading"></div>
+    <div class="subject-count-row">
+      <label id="subjectCountLabel"></label>
+      <select class="form-select" id="subjectCount">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+      <button class="btn-save-sm" id="applyCountBtn" onclick="applySubjectCount()"></button>
+    </div>
+    <div id="nameList"></div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="section" id="sec-task">
+    <div class="section-title" id="sec-task-heading"></div>
+    <div id="taskList"></div>
+  </div>
+
+  <!-- PW MANAGEMENT (master only) -->
+  <div class="section" id="sec-pw">
+    <div class="section-title" id="sec-pw-heading"></div>
+
+    <!-- Master PW change -->
+    <div class="master-pw-section">
+      <div class="master-pw-section-title" id="masterPwSectionTitle"></div>
+      <div class="form-row">
+        <label class="form-label" id="newMasterPwLabel"></label>
+        <input class="form-input-sm" id="newMasterPwInput" type="text" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label class="form-label" id="newMasterPwConfirmLabel"></label>
+        <input class="form-input-sm" id="newMasterPwConfirmInput" type="text" autocomplete="off">
+      </div>
+      <div class="form-error" id="masterPwChangeError"></div>
+      <button class="btn-save-sm" id="saveMasterPwBtn" onclick="saveMasterPw()" style="width:100%;margin-top:4px"></button>
+    </div>
+
+    <!-- User PW -->
+    <div class="pw-current-row">
+      <span class="pw-current-label" id="currentPwLabel"></span>
+      <span class="pw-current-val" id="currentPwVal"></span>
+    </div>
+    <div class="form-row">
+      <label class="form-label" id="newPwLabel"></label>
+      <input class="form-input-sm" id="newPwInput" type="text" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" id="savePwBtn" onclick="saveUserPw()"></button>
+  </div>
+
+  <!-- RESET -->
+  <div class="section" id="sec-reset">
+    <div class="section-title" id="sec-reset-heading"></div>
+    <div class="reset-section">
+      <div class="reset-section-title" id="resetSubmitTitle"></div>
+      <p id="resetSubmitDesc"></p>
+      <button class="btn-reset" id="resetSubmitBtn" onclick="resetSubmits()"></button>
+    </div>
+    <div class="reset-section" style="margin-top:12px;">
+      <div class="reset-section-title" id="resetAllTitle"></div>
+      <p id="resetAllDesc"></p>
+      <button class="btn-reset" id="resetAllBtn" onclick="resetAll()"></button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script>
-const SA_KEY     = 'sa_data_v1';
-const SUBMIT_KEY = 'sa_submit_v1';
-const LANG_KEY   = 'sa_lang_v1';
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, doc, getDoc, getDocs, collection,
+  setDoc, deleteDoc, writeBatch
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBB2SdUfNU1K-yeEgm_dOynrH76rqwT2VQ",
+  authDomain: "colorcue-tasks.firebaseapp.com",
+  projectId: "colorcue-tasks",
+  storageBucket: "colorcue-tasks.firebasestorage.app",
+  messagingSenderId: "412238648786",
+  appId: "1:412238648786:web:34ebfee504679b3ff9240b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const LANG_KEY    = 'cct_lang_v1';
+const SAVED_GROUP = 'cct_group_v1';
+const SESSION_KEY = 'cct_admin_role_v1';
+
+const DEFAULT_USER_PW = 'pass2026';
 
 const STRINGS = {
   ja: {
-    pageTitle:            '管理画面',
-    backLink:             '起動画面に戻る',
-    mcTitle:              'タイトル設定',
-    mcName:               '科目/仕事設定',
-    mcTask:               '課題/業務設定',
-    mcReset:              'データ管理',
-    secTitleHeading:      'タイトル設定',
-    labelTitle:           '表示タイトル',
-    saveTitleBtn:         '保存する',
-    secNameHeading:       '科目/仕事名設定',
-    subjectCountLabel:    '科目/仕事数：',
-    applyCountBtn:        '保存',
-    secTaskHeading:       '課題/業務設定',
-    secResetHeading:      'データ管理',
-    resetSubmitTitle:     '完了状況をリセット',
-    resetSubmitDesc:      '全科目/業務の「完了した」チェックをクリアします。科目/仕事や課題/業務データは消えません。',
-    resetSubmitBtn:       '完了状況をリセット',
-    resetAllTitle:        '全データをリセット',
-    resetAllDesc:         '科目/仕事，課題/業務，完了状況を含む全てのデータを削除します。この操作は元に戻せません。',
-    resetAllBtn:          '全データをリセット',
-    subjectHeader:        '#',
-    subjectPlaceholder:   '科目/仕事名',
-    saveNameBtn:          '保存',
-    noSubjectMsg:         '先に「科目/仕事設定」で科目/仕事を追加してください',
-    noTasks:              '課題/業務なし',
-    addTaskTitle:         '新しい課題/業務を追加',
-    taskContentLabel:     '課題/業務内容',
-    taskContentHolder:    '課題/業務の内容を入力',
-    deadlineLabel:        '期限（日付）',
-    addTaskBtn:           '課題/業務を追加',
-    deadlinePrefix:       '期限：',
-    deleteBtn:            '削除',
-    toastTitleSaved:      'タイトルを保存しました',
-    toastCountApplied:    '科目/仕事数を適用しました',
-    toastNameSaved:       '科目/仕事名を保存しました',
-    toastTaskAdded:       '課題/業務を追加しました',
-    toastTaskDeleted:     '課題/業務を削除しました',
-    toastResetSubmit:     '完了状況をリセットしました',
-    toastResetAll:        '全データをリセットしました',
-    confirmCountDown:     (n, m) => `科目/仕事数を${n}に減らすと、科目/仕事${m}以降の課題/業務データも削除されます。よろしいですか？`,
-    confirmDeleteTask:    'この課題/業務を削除しますか？',
-    confirmResetSubmit:   '全科目/業務の完了状況をリセットしますか？',
-    confirmResetAll:      '全データ（科目/仕事・課題/業務・完了状況）を削除します。この操作は元に戻せません。よろしいですか？',
-    inputRequired:        '内容と日付を入力してください',
-    defaultSubjectName:   (i) => `科目/仕事${i}`,
-    subjectTaskHeader:    (id, name) => `#${id}: ${name}`,
-    hourSuffix:           (h) => `${h}時`,
-    minOptions:           ['00分','15分','30分','45分'],
+    loading:               '読み込み中...',
+    pageTitle:             '管理画面',
+    backLink:              '起動画面に戻る',
+    backTopBtn:            '起動画面に戻る',
+    backToLoginBtn:        'ログイン画面に戻る',
+    currentGroup:          '現在のグループ：',
+    noGroup:               '未選択',
+    rolemaster:            'MASTER',
+    roleuser:              'USER',
+    loginPwLabelMaster:    'マスターパスワード',
+    loginPwLabelUser:      'ユーザーパスワード',
+    loginBtn:              'ログイン',
+    loginError:            'パスワードが正しくありません',
+    firstSetupBtn:         '初回セットアップを開始',
+    forgotPwBtn:           'パスワードを忘れた場合',
+    // Setup wizard
+    setupSubtitle:         '初回セットアップ',
+    setup1Title:           'マスターパスワードを設定',
+    setup1Desc:            '初期パスワードを変更してください。このパスワードは管理画面へのアクセスに必要です。',
+    setup1PwLabel:         '新しいマスターパスワード',
+    setup1PwHint:          '4文字以上で入力してください',
+    setup1PwConfirmLabel:  'パスワード（確認）',
+    setup1NextBtn:         '次へ',
+    setup1ErrShort:        'パスワードは4文字以上で設定してください',
+    setup1ErrMatch:        'パスワードが一致しません',
+    setup2Title:           'リカバリーコードを保存',
+    setup2Desc:            'パスワードを忘れた場合に使用するリカバリーコードです。必ず安全な場所に保存してください。',
+    setup2CodeLabel:       'リカバリーコード',
+    setup2CodeHint:        'このコードはこの画面でのみ表示されます',
+    setup2Warn:            'このコードを紛失するとパスワードリセットができなくなります。今すぐメモしてください。',
+    setup2NextBtn:         'コードを保存しました。次へ',
+    setup3Title:           'リカバリーコードの確認',
+    setup3Desc:            '保存したリカバリーコードを入力して確認してください。',
+    setup3CodeLabel:       'リカバリーコード',
+    setup3CompleteBtn:     'セットアップを完了する',
+    setup3ErrWrong:        'リカバリーコードが正しくありません',
+    // Forgot PW
+    forgotSubtitle:        'パスワードリセット',
+    forgotTitle:           'マスターパスワードをリセット',
+    forgotDesc:            'リカバリーコードを入力してください。コードが正しければ新しいパスワードを設定できます。',
+    forgotCodeLabel:       'リカバリーコード',
+    forgotVerifyBtn:       '確認する',
+    forgotCodeError:       'リカバリーコードが正しくありません',
+    forgotVerifiedMsg:     'リカバリーコードが確認できました。新しいパスワードを設定してください。',
+    forgotNewPwLabel:      '新しいマスターパスワード',
+    forgotNewPwConfirmLabel: 'パスワード（確認）',
+    forgotResetBtn:        'パスワードをリセットする',
+    forgotErrShort:        'パスワードは4文字以上で設定してください',
+    forgotErrMatch:        'パスワードが一致しません',
+    // Admin PW section
+    secPwHeading:          'パスワード管理',
+    masterPwSectionTitle:  'マスターパスワードを変更',
+    newMasterPwLabel:      '新しいマスターパスワード',
+    newMasterPwConfirmLabel: 'パスワード（確認）',
+    saveMasterPwBtn:       'マスターPWを変更する',
+    masterPwChangeErrShort:'パスワードは4文字以上で設定してください',
+    masterPwChangeErrMatch:'パスワードが一致しません',
+    currentPwLabel:        'ユーザーPW：',
+    newPwLabel:            '新しいユーザーパスワード',
+    savePwBtn:             'ユーザーPWを変更する',
+    // Others
+    mcGroups:              'グループ管理',
+    mcTitle:               'タイトル設定',
+    mcName:                '科目/仕事設定',
+    mcTask:                '課題/業務設定',
+    mcPw:                  'PW管理',
+    mcReset:               'データ管理',
+    secGroupsHeading:      'グループ管理',
+    newGroupBoxTitle:      '新しいグループを作成',
+    newGroupNameLabel:     'グループ名（任意）',
+    newGroupNameHolder:    '例: クラス1-A',
+    createGroupBtn:        'グループを作成してコードを発行',
+    groupSelectBtn:        '選択',
+    groupCurrentBtn:       '選択中',
+    groupDeleteBtn:        '削除',
+    secTitleHeading:       'タイトル設定',
+    labelTitle:            '表示タイトル',
+    saveTitleBtn:          '保存する',
+    secNameHeading:        '科目/仕事名設定',
+    subjectCountLabel:     '科目/仕事数：',
+    applyCountBtn:         '保存',
+    secTaskHeading:        '課題/業務設定',
+    secResetHeading:       'データ管理',
+    resetSubmitTitle:      '完了状況をリセット',
+    resetSubmitDesc:       '全科目/業務の「完了した」チェックをクリアします。',
+    resetSubmitBtn:        '完了状況をリセット',
+    resetAllTitle:         '全データをリセット',
+    resetAllDesc:          '科目/仕事・課題/業務・完了状況を全て削除します。この操作は元に戻せません。',
+    resetAllBtn:           '全データをリセット',
+    subjectHeader:         '#',
+    subjectPlaceholder:    '科目/仕事名',
+    saveNameBtn:           '保存',
+    noSubjectMsg:          '先に「科目/仕事設定」で科目/仕事を追加してください',
+    noTasks:               '課題/業務なし',
+    addTaskTitle:          '新しい課題/業務を追加',
+    taskContentLabel:      '課題/業務内容',
+    taskContentHolder:     '課題/業務の内容を入力',
+    deadlineLabel:         '期限（日付）',
+    addTaskBtn:            '課題/業務を追加',
+    deadlinePrefix:        '期限：',
+    deleteBtn:             '削除',
+    hourSuffix:            (h) => `${h}時`,
+    minOptions:            ['00分','15分','30分','45分'],
+    subjectTaskHeader:     (id, name) => `#${id}: ${name}`,
+    defaultSubjectName:    (i) => `科目/仕事${i}`,
+    toastGroupCreated:     'グループを作成しました',
+    toastGroupDeleted:     'グループを削除しました',
+    toastTitleSaved:       'タイトルを保存しました',
+    toastCountApplied:     '科目/仕事数を適用しました',
+    toastNameSaved:        '科目/仕事名を保存しました',
+    toastTaskAdded:        '課題/業務を追加しました',
+    toastTaskDeleted:      '課題/業務を削除しました',
+    toastMasterPwSaved:    'マスターパスワードを変更しました',
+    toastUserPwSaved:      'ユーザーパスワードを変更しました',
+    toastResetSubmit:      '完了状況をリセットしました',
+    toastResetAll:         '全データをリセットしました',
+    confirmGroupDelete:    'このグループを削除しますか？全データが消えます。',
+    confirmCountDown:      (n, m) => `科目/仕事数を${n}に減らすと、科目/仕事${m}以降のデータも削除されます。よろしいですか？`,
+    confirmDeleteTask:     'この課題/業務を削除しますか？',
+    confirmResetSubmit:    '全科目/業務の完了状況をリセットしますか？',
+    confirmResetAll:       '全データを削除します。この操作は元に戻せません。よろしいですか？',
+    inputRequired:         '内容と日付を入力してください',
+    pwRequired:            'パスワードを入力してください',
+    noGroupSelected:       'グループを選択してください',
   },
   en: {
-    pageTitle:            'Admin Panel',
-    backLink:             'Return to initial screen',
-    mcTitle:              'Title Settings',
-    mcName:               'Subject/Work Settings',
-    mcTask:               'Assignment/Task Settings',
-    mcReset:              'Data Management',
-    secTitleHeading:      'Title Settings',
-    labelTitle:           'Label Title',
-    saveTitleBtn:         'Save',
-    secNameHeading:       'Subject/Work Settings',
-    subjectCountLabel:    'Number of subjects/works:',
-    applyCountBtn:        'Save',
-    secTaskHeading:       'Assignment/Task Settings',
-    secResetHeading:      'Data Management',
-    resetSubmitTitle:     'Reset Completion Status',
-    resetSubmitDesc:      'Clears the "Completed" checkbox for all subjects/works. subject/work and assignment/task data will not be deleted.',
-    resetSubmitBtn:       'Reset Completion Status',
-    resetAllTitle:        'Reset All Data',
-    resetAllDesc:         'Deletes all data, including subjects/works, assignments/tasks, and completion status. This action cannot be undone.',
-    resetAllBtn:          'Reset All Data',
-    subjectHeader:        '#',
-    subjectPlaceholder:   'Subject/Work name',
-    saveNameBtn:          'Save',
-    noSubjectMsg:         'Please add subjects/works in "Subject/Work Settings" first.',
-    noTasks:              'No assignments/tasks',
-    addTaskTitle:         'Add a new assignment/task',
-    taskContentLabel:     'Assignment/Task details',
-    taskContentHolder:    'Input the details of the assignment/task',
-    deadlineLabel:        'Deadline',
-    addTaskBtn:           'Add assignment/task',
-    deadlinePrefix:       'Deadline: ',
-    deleteBtn:            'Delete',
-    toastTitleSaved:      'Title saved.',
-    toastCountApplied:    'Number of subjects/works applied.',
-    toastNameSaved:       'Subject/work name saved.',
-    toastTaskAdded:       'Assignment/task added.',
-    toastTaskDeleted:     'Assignment/task deleted.',
-    toastResetSubmit:     'Completion status reset.',
-    toastResetAll:        'All data reset.',
-    confirmCountDown:     (n, m) => `Reducing to ${n} subjects/works will also delete assignment/task data for subject/work #${m} and beyond. Continue?`,
-    confirmDeleteTask:    'Delete this assignment/task?',
-    confirmResetSubmit:   'Reset completion status for all subjects/works?',
-    confirmResetAll:      'Delete all data (subjects/works, assignments/tasks, completion status). This cannot be undone. Continue?',
-    inputRequired:        'Please enter content and date.',
-    defaultSubjectName:   (i) => `Subject / Work #${i}`,
-    subjectTaskHeader:    (id, name) => `#${id}: ${name}`,
-    hourSuffix:           (h) => `${String(h).padStart(2,'0')}:00`,
-    minOptions:           [':00',':15',':30',':45'],
+    loading:               'Loading...',
+    pageTitle:             'Admin Panel',
+    backLink:              'Return to initial screen',
+    backTopBtn:            'Return to initial screen',
+    backToLoginBtn:        'Back to login',
+    currentGroup:          'Current group: ',
+    noGroup:               'None',
+    rolemaster:            'MASTER',
+    roleuser:              'USER',
+    loginPwLabelMaster:    'Master Password',
+    loginPwLabelUser:      'User Password',
+    loginBtn:              'Login',
+    loginError:            'Incorrect password',
+    firstSetupBtn:         'Start Initial Setup',
+    forgotPwBtn:           'Forgot your password?',
+    // Setup wizard
+    setupSubtitle:         'Initial Setup',
+    setup1Title:           'Set Master Password',
+    setup1Desc:            'Change the default password. This password is required to access the admin panel.',
+    setup1PwLabel:         'New Master Password',
+    setup1PwHint:          'At least 4 characters',
+    setup1PwConfirmLabel:  'Confirm Password',
+    setup1NextBtn:         'Next',
+    setup1ErrShort:        'Password must be at least 4 characters',
+    setup1ErrMatch:        'Passwords do not match',
+    setup2Title:           'Save Recovery Code',
+    setup2Desc:            'This recovery code is used if you forget your password. Save it in a secure place.',
+    setup2CodeLabel:       'Recovery Code',
+    setup2CodeHint:        'This code is only shown once',
+    setup2Warn:            'If you lose this code, password reset will not be possible. Write it down now.',
+    setup2NextBtn:         'I have saved the code. Next',
+    setup3Title:           'Confirm Recovery Code',
+    setup3Desc:            'Enter the recovery code you just saved to confirm.',
+    setup3CodeLabel:       'Recovery Code',
+    setup3CompleteBtn:     'Complete Setup',
+    setup3ErrWrong:        'Recovery code is incorrect',
+    // Forgot PW
+    forgotSubtitle:        'Password Reset',
+    forgotTitle:           'Reset Master Password',
+    forgotDesc:            'Enter your recovery code. If correct, you can set a new password.',
+    forgotCodeLabel:       'Recovery Code',
+    forgotVerifyBtn:       'Verify',
+    forgotCodeError:       'Recovery code is incorrect',
+    forgotVerifiedMsg:     'Recovery code verified. Please set a new password.',
+    forgotNewPwLabel:      'New Master Password',
+    forgotNewPwConfirmLabel: 'Confirm Password',
+    forgotResetBtn:        'Reset Password',
+    forgotErrShort:        'Password must be at least 4 characters',
+    forgotErrMatch:        'Passwords do not match',
+    // Admin PW section
+    secPwHeading:          'Password Management',
+    masterPwSectionTitle:  'Change Master Password',
+    newMasterPwLabel:      'New Master Password',
+    newMasterPwConfirmLabel: 'Confirm Password',
+    saveMasterPwBtn:       'Change Master PW',
+    masterPwChangeErrShort:'Password must be at least 4 characters',
+    masterPwChangeErrMatch:'Passwords do not match',
+    currentPwLabel:        'User PW:',
+    newPwLabel:            'New User Password',
+    savePwBtn:             'Change User PW',
+    // Others
+    mcGroups:              'Group Management',
+    mcTitle:               'Title Settings',
+    mcName:                'Subject/Work Settings',
+    mcTask:                'Assignment/Task Settings',
+    mcPw:                  'PW Management',
+    mcReset:               'Data Management',
+    secGroupsHeading:      'Group Management',
+    newGroupBoxTitle:      'Create a new group',
+    newGroupNameLabel:     'Group name (optional)',
+    newGroupNameHolder:    'e.g. Class 1-A',
+    createGroupBtn:        'Create group & issue code',
+    groupSelectBtn:        'Select',
+    groupCurrentBtn:       'Selected',
+    groupDeleteBtn:        'Delete',
+    secTitleHeading:       'Title Settings',
+    labelTitle:            'Display Title',
+    saveTitleBtn:          'Save',
+    secNameHeading:        'Subject/Work Settings',
+    subjectCountLabel:     'Number:',
+    applyCountBtn:         'Save',
+    secTaskHeading:        'Assignment/Task Settings',
+    secResetHeading:       'Data Management',
+    resetSubmitTitle:      'Reset Completion Status',
+    resetSubmitDesc:       'Clears all "Completed" checkboxes.',
+    resetSubmitBtn:        'Reset Completion Status',
+    resetAllTitle:         'Reset All Data',
+    resetAllDesc:          'Deletes all subjects/works, tasks, and completion status. Cannot be undone.',
+    resetAllBtn:           'Reset All Data',
+    subjectHeader:         '#',
+    subjectPlaceholder:    'Subject/Work name',
+    saveNameBtn:           'Save',
+    noSubjectMsg:          'Please add subjects/works in "Subject/Work Settings" first.',
+    noTasks:               'No assignments/tasks',
+    addTaskTitle:          'Add a new assignment/task',
+    taskContentLabel:      'Assignment/Task details',
+    taskContentHolder:     'Input assignment/task details',
+    deadlineLabel:         'Deadline',
+    addTaskBtn:            'Add assignment/task',
+    deadlinePrefix:        'Deadline: ',
+    deleteBtn:             'Delete',
+    hourSuffix:            (h) => `${String(h).padStart(2,'0')}:00`,
+    minOptions:            [':00',':15',':30',':45'],
+    subjectTaskHeader:     (id, name) => `#${id}: ${name}`,
+    defaultSubjectName:    (i) => `Subject / Work #${i}`,
+    toastGroupCreated:     'Group created',
+    toastGroupDeleted:     'Group deleted',
+    toastTitleSaved:       'Title saved.',
+    toastCountApplied:     'Number of subjects/works applied.',
+    toastNameSaved:        'Subject/work name saved.',
+    toastTaskAdded:        'Assignment/task added.',
+    toastTaskDeleted:      'Assignment/task deleted.',
+    toastMasterPwSaved:    'Master password changed.',
+    toastUserPwSaved:      'User password changed.',
+    toastResetSubmit:      'Completion status reset.',
+    toastResetAll:         'All data reset.',
+    confirmGroupDelete:    'Delete this group? All data will be lost.',
+    confirmCountDown:      (n, m) => `Reducing to ${n} will delete data for subject/work #${m}+. Continue?`,
+    confirmDeleteTask:     'Delete this assignment/task?',
+    confirmResetSubmit:    'Reset completion status for all subjects/works?',
+    confirmResetAll:       'Delete all data. Cannot be undone. Continue?',
+    inputRequired:         'Please enter content and date.',
+    pwRequired:            'Please enter a password.',
+    noGroupSelected:       'Please select a group first.',
   }
 };
 
-let currentLang = localStorage.getItem(LANG_KEY) || 'ja';
+let currentLang     = localStorage.getItem(LANG_KEY) || 'ja';
+let currentSection  = null;
+let currentRole     = null;
+let selectedRoleTab = 'master';
+let isFirstSetup    = false;
+let groups          = [];
+let activeGroupCode = null;
+let subjects        = [];
+let tasks           = [];
+let systemSettings  = { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
+
+// Generated recovery code during setup
+let pendingRecoveryCode = '';
+let pendingNewMasterPw  = '';
 
 function s(key, ...args) {
   const val = STRINGS[currentLang][key];
-  return typeof val === 'function' ? val(...args) : val;
+  return typeof val === 'function' ? val(...args) : (val || key);
 }
-
-function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem(LANG_KEY, lang);
-  applyLangUI();
-  if (currentSection === 'name') renderNameSection();
-  if (currentSection === 'task') renderTaskList();
+function showLoading(msg) {
+  document.getElementById('loadingText').textContent = msg || s('loading');
+  document.getElementById('loadingOverlay').classList.remove('hidden');
 }
-
-function applyLangUI() {
-  document.getElementById('btn-jp').classList.toggle('active', currentLang === 'ja');
-  document.getElementById('btn-en').classList.toggle('active', currentLang === 'en');
-  document.getElementById('pageTitle').textContent          = s('pageTitle');
-  document.getElementById('backLinkText').textContent       = s('backLink');
-  document.getElementById('mc-title-label').textContent     = s('mcTitle');
-  document.getElementById('mc-name-label').textContent      = s('mcName');
-  document.getElementById('mc-task-label').textContent      = s('mcTask');
-  document.getElementById('mc-reset-label').textContent     = s('mcReset');
-  document.getElementById('sec-title-heading').textContent  = s('secTitleHeading');
-  document.getElementById('labelTitle').textContent         = s('labelTitle');
-  document.getElementById('saveTitleBtn').textContent       = s('saveTitleBtn');
-  document.getElementById('sec-name-heading').textContent   = s('secNameHeading');
-  document.getElementById('subjectCountLabel').textContent  = s('subjectCountLabel');
-  document.getElementById('applyCountBtn').textContent      = s('applyCountBtn');
-  document.getElementById('sec-task-heading').textContent   = s('secTaskHeading');
-  document.getElementById('sec-reset-heading').textContent  = s('secResetHeading');
-  document.getElementById('resetSubmitTitle').textContent   = s('resetSubmitTitle');
-  document.getElementById('resetSubmitDesc').textContent    = s('resetSubmitDesc');
-  document.getElementById('resetSubmitBtn').textContent     = s('resetSubmitBtn');
-  document.getElementById('resetAllTitle').textContent      = s('resetAllTitle');
-  document.getElementById('resetAllDesc').textContent       = s('resetAllDesc');
-  document.getElementById('resetAllBtn').textContent        = s('resetAllBtn');
-  document.getElementById('newTitle').placeholder           = s('labelTitle');
-}
-
-function loadSaData() {
-  try {
-    return JSON.parse(localStorage.getItem(SA_KEY) || 'null') || {
-      tile_title: '',
-      subjects: [],
-      tasks: []
-    };
-  } catch(e) {
-    return { tile_title: '', subjects: [], tasks: [] };
-  }
-}
-
-function saveSaData(data) {
-  localStorage.setItem(SA_KEY, JSON.stringify(data));
-}
-
-let saData = loadSaData();
-if (saData.subjects.length === 0) {
-  for (let i = 1; i <= 9; i++) {
-    saData.subjects.push({ id: i, name: s('defaultSubjectName', i) });
-  }
-  saveSaData(saData);
-}
-let currentSection = null;
-
+function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2200);
 }
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-function showSection(name) {
-  ['title','name','task','reset'].forEach(sec => {
-    document.getElementById('sec-' + sec).classList.remove('active');
-    document.getElementById('mc-' + sec).classList.remove('active-menu');
+// Show/hide top-level screens
+function showLogin()  {
+  ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('adminScreen').classList.remove('visible');
+  document.getElementById('loginScreen').classList.add('visible');
+}
+function showSetup()  {
+  ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('adminScreen').classList.remove('visible');
+  document.getElementById('setupScreen').classList.add('visible');
+}
+function showForgot() {
+  ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('adminScreen').classList.remove('visible');
+  document.getElementById('forgotScreen').classList.add('visible');
+}
+window.showLogin  = showLogin;
+window.showForgot = showForgot;
+
+// ---- LANGUAGE ----
+window.setLang = function(lang) {
+  currentLang = lang;
+  localStorage.setItem(LANG_KEY, lang);
+  applyLangUI();
+  if (currentSection === 'name')   renderNameSection();
+  if (currentSection === 'task')   renderTaskList();
+  if (currentSection === 'groups') renderGroupList();
+};
+
+function setLangBtn(prefix, lang) {
+  const jp = document.getElementById(prefix + '-jp');
+  const en = document.getElementById(prefix + '-en');
+  if (jp) jp.classList.toggle('active', lang === 'ja');
+  if (en) en.classList.toggle('active', lang === 'en');
+}
+
+function applyLangUI() {
+  const isJa = currentLang === 'ja';
+  setLangBtn('login-btn', currentLang);
+  setLangBtn('setup-btn', currentLang);
+  setLangBtn('forgot-btn', currentLang);
+  const bj = document.getElementById('btn-jp');
+  const be = document.getElementById('btn-en');
+  if (bj) bj.classList.toggle('active', isJa);
+  if (be) be.classList.toggle('active', !isJa);
+
+  // Login
+  set('backTopBtn',            'backTopBtn');
+  set('backToLoginBtn',        'backToLoginBtn');
+  set('loginBtn',              'loginBtn');
+  set('firstSetupBtn',         'firstSetupBtn');
+  set('forgotPwBtn',           'forgotPwBtn');
+  set('loginPwLabel',          selectedRoleTab === 'master' ? 'loginPwLabelMaster' : 'loginPwLabelUser');
+  // Role tabs
+  const mTabStr = isJa ? 'マスター <span class="role-badge master">MASTER</span>'
+                       : 'Master <span class="role-badge master">MASTER</span>';
+  const uTabStr = isJa ? 'ユーザー <span class="role-badge user">USER</span>'
+                       : 'User <span class="role-badge user">USER</span>';
+  const mBtn = document.getElementById('tabMasterBtn');
+  const uBtn = document.getElementById('tabUserBtn');
+  if (mBtn) mBtn.innerHTML = mTabStr;
+  if (uBtn) uBtn.innerHTML = uTabStr;
+  // Setup wizard
+  set('setupSubtitle',         'setupSubtitle');
+  set('setup1Title',           'setup1Title');
+  set('setup1Desc',            'setup1Desc');
+  set('setup1PwLabel',         'setup1PwLabel');
+  set('setup1PwHint',          'setup1PwHint');
+  set('setup1PwConfirmLabel',  'setup1PwConfirmLabel');
+  set('setup1NextBtn',         'setup1NextBtn');
+  set('setup2Title',           'setup2Title');
+  set('setup2Desc',            'setup2Desc');
+  set('setup2CodeLabel',       'setup2CodeLabel');
+  set('setup2CodeHint',        'setup2CodeHint');
+  set('setup2Warn',            'setup2Warn');
+  set('setup2NextBtn',         'setup2NextBtn');
+  set('setup3Title',           'setup3Title');
+  set('setup3Desc',            'setup3Desc');
+  set('setup3CodeLabel',       'setup3CodeLabel');
+  set('setup3CompleteBtn',     'setup3CompleteBtn');
+  // Forgot PW
+  set('forgotSubtitle',        'forgotSubtitle');
+  set('forgotTitle',           'forgotTitle');
+  set('forgotDesc',            'forgotDesc');
+  set('forgotCodeLabel',       'forgotCodeLabel');
+  set('forgotVerifyBtn',       'forgotVerifyBtn');
+  set('forgotVerifiedMsg',     'forgotVerifiedMsg');
+  set('forgotNewPwLabel',      'forgotNewPwLabel');
+  set('forgotNewPwConfirmLabel','forgotNewPwConfirmLabel');
+  set('forgotResetBtn',        'forgotResetBtn');
+  // Admin main
+  set('backLinkText',          'backLink');
+  set('pageTitle',             'pageTitle');
+  set('currentGroupLabel',     'currentGroup');
+  set('mc-groups-label',       'mcGroups');
+  set('mc-title-label',        'mcTitle');
+  set('mc-name-label',         'mcName');
+  set('mc-task-label',         'mcTask');
+  set('mc-pw-label',           'mcPw');
+  set('mc-reset-label',        'mcReset');
+  set('mc-task-u-label',       'mcTask');
+  set('sec-groups-heading',    'secGroupsHeading');
+  set('newGroupBoxTitle',      'newGroupBoxTitle');
+  set('newGroupNameLabel',     'newGroupNameLabel');
+  document.getElementById('newGroupName').placeholder = s('newGroupNameHolder');
+  set('createGroupBtn',        'createGroupBtn');
+  set('sec-title-heading',     'secTitleHeading');
+  set('labelTitle',            'labelTitle');
+  document.getElementById('newTitle').placeholder = s('labelTitle');
+  set('saveTitleBtn',          'saveTitleBtn');
+  set('sec-name-heading',      'secNameHeading');
+  set('subjectCountLabel',     'subjectCountLabel');
+  set('applyCountBtn',         'applyCountBtn');
+  set('sec-task-heading',      'secTaskHeading');
+  set('sec-pw-heading',        'secPwHeading');
+  set('masterPwSectionTitle',  'masterPwSectionTitle');
+  set('newMasterPwLabel',      'newMasterPwLabel');
+  set('newMasterPwConfirmLabel','newMasterPwConfirmLabel');
+  set('saveMasterPwBtn',       'saveMasterPwBtn');
+  set('currentPwLabel',        'currentPwLabel');
+  set('newPwLabel',            'newPwLabel');
+  set('savePwBtn',             'savePwBtn');
+  set('sec-reset-heading',     'secResetHeading');
+  set('resetSubmitTitle',      'resetSubmitTitle');
+  set('resetSubmitDesc',       'resetSubmitDesc');
+  set('resetSubmitBtn',        'resetSubmitBtn');
+  set('resetAllTitle',         'resetAllTitle');
+  set('resetAllDesc',          'resetAllDesc');
+  set('resetAllBtn',           'resetAllBtn');
+  document.getElementById('currentGroupBadge').textContent = activeGroupCode || s('noGroup');
+}
+
+function set(id, key) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = s(key);
+}
+
+// ---- LOGIN ----
+window.switchRoleTab = function(role) {
+  selectedRoleTab = role;
+  document.getElementById('tabMasterBtn').classList.toggle('active', role === 'master');
+  document.getElementById('tabUserBtn').classList.toggle('active', role === 'user');
+  document.getElementById('loginPwLabel').textContent = s(role === 'master' ? 'loginPwLabelMaster' : 'loginPwLabelUser');
+  document.getElementById('loginError').textContent   = '';
+  document.getElementById('loginPwInput').value       = '';
+  // Only master can use forgot PW
+  document.getElementById('forgotPwRow').style.display = role === 'master' ? '' : 'none';
+};
+
+window.doLogin = async function() {
+  const pw = document.getElementById('loginPwInput').value;
+  if (!pw) return;
+  showLoading();
+  try {
+    const snap = await getDoc(doc(db, 'system', 'settings'));
+    systemSettings = snap.exists() ? snap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
+
+    if (selectedRoleTab === 'master') {
+      if (pw !== systemSettings.master_pw) {
+        document.getElementById('loginError').textContent = s('loginError');
+        hideLoading(); return;
+      }
+      currentRole = 'master';
+    } else {
+      if (pw !== (systemSettings.user_pw || DEFAULT_USER_PW)) {
+        document.getElementById('loginError').textContent = s('loginError');
+        hideLoading(); return;
+      }
+      currentRole = 'user';
+    }
+    sessionStorage.setItem(SESSION_KEY, currentRole);
+    await enterAdmin();
+  } catch(e) {
+    document.getElementById('loginError').textContent = e.message;
+    hideLoading();
+  }
+};
+
+// ---- FIRST SETUP ----
+window.doFirstSetup = function() {
+  showSetup();
+  showSetupStep(1);
+  applyLangUI();
+};
+
+function showSetupStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('setupStep' + i).style.display = i === n ? '' : 'none';
+    const dot = document.getElementById('step' + i + 'dot');
+    dot.className = 'step-dot ' + (i < n ? 'done' : i === n ? 'active' : 'pending');
+    if (i < 3) {
+      const line = document.getElementById('step' + i + 'line');
+      line.className = 'step-line' + (i < n ? ' done' : '');
+    }
   });
-  if (currentSection === name) {
-    currentSection = null;
+}
+
+window.onSetupPwInput = function() {
+  const pw  = document.getElementById('setup1PwInput').value;
+  const pw2 = document.getElementById('setup1PwConfirmInput').value;
+  document.getElementById('setup1NextBtn').disabled = pw.length < 4 || pw !== pw2;
+  document.getElementById('setup1Error').textContent = '';
+};
+
+window.setupStep1Next = function() {
+  const pw  = document.getElementById('setup1PwInput').value;
+  const pw2 = document.getElementById('setup1PwConfirmInput').value;
+  if (pw.length < 4) { document.getElementById('setup1Error').textContent = s('setup1ErrShort'); return; }
+  if (pw !== pw2)    { document.getElementById('setup1Error').textContent = s('setup1ErrMatch'); return; }
+  pendingNewMasterPw  = pw;
+  pendingRecoveryCode = generateRecoveryCode();
+  document.getElementById('setup2CodeValue').textContent = pendingRecoveryCode;
+  showSetupStep(2);
+};
+
+window.setupStep2Next = function() {
+  document.getElementById('setup3CodeInput').value = '';
+  document.getElementById('setup3Error').textContent = '';
+  showSetupStep(3);
+};
+
+window.setupStep3Complete = async function() {
+  const entered = document.getElementById('setup3CodeInput').value.trim();
+  if (entered !== pendingRecoveryCode) {
+    document.getElementById('setup3Error').textContent = s('setup3ErrWrong');
     return;
   }
-  document.getElementById('sec-' + name).classList.add('active');
-  document.getElementById('mc-' + name).classList.add('active-menu');
-  currentSection = name;
-  if (name === 'name') renderNameSection();
-  if (name === 'task') renderTaskList();
-  if (name === 'title') {
-    const oldDefaults = ['課題一覧', '課題/業務一覧', 'List of Assignments/Works'];
-    const storedTitle = oldDefaults.includes(saData.tile_title) ? '' : saData.tile_title;
-    document.getElementById('newTitle').value = storedTitle;
+  showLoading();
+  try {
+    const existing = await getDoc(doc(db, 'system', 'settings'));
+    const existingUserPw = existing.exists() ? (existing.data().user_pw || DEFAULT_USER_PW) : DEFAULT_USER_PW;
+    await setDoc(doc(db, 'system', 'settings'), {
+      master_pw:     pendingNewMasterPw,
+      user_pw:       existingUserPw,
+      recovery_code: pendingRecoveryCode,
+    });
+    systemSettings = { master_pw: pendingNewMasterPw, user_pw: existingUserPw, recovery_code: pendingRecoveryCode };
+    pendingNewMasterPw  = '';
+    pendingRecoveryCode = '';
+    currentRole = 'master';
+    isFirstSetup = false;
+    sessionStorage.setItem(SESSION_KEY, 'master');
+    await enterAdmin();
+  } catch(e) {
+    document.getElementById('setup3Error').textContent = e.message;
+    hideLoading();
   }
-  document.getElementById('sec-' + name).scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+function generateRecoveryCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 12; i++) {
+    if (i > 0 && i % 4 === 0) code += '-';
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
 }
 
-function saveTitle() {
-  const title = document.getElementById('newTitle').value.trim();
-  saData.tile_title = title;
-  saveSaData(saData);
-  showToast(s('toastTitleSaved'));
+// ---- FORGOT PW ----
+window.showForgotPw = function() {
+  showForgot();
+  document.getElementById('forgotStepA').style.display = '';
+  document.getElementById('forgotStepB').style.display = 'none';
+  document.getElementById('forgotCodeInput').value     = '';
+  document.getElementById('forgotCodeError').textContent = '';
+  applyLangUI();
+};
+
+window.forgotVerify = async function() {
+  const code = document.getElementById('forgotCodeInput').value.trim();
+  showLoading();
+  try {
+    const snap = await getDoc(doc(db, 'system', 'settings'));
+    if (!snap.exists()) { document.getElementById('forgotCodeError').textContent = s('forgotCodeError'); hideLoading(); return; }
+    systemSettings = snap.data();
+    if (code !== systemSettings.recovery_code) {
+      document.getElementById('forgotCodeError').textContent = s('forgotCodeError');
+      hideLoading(); return;
+    }
+    document.getElementById('forgotStepA').style.display = 'none';
+    document.getElementById('forgotStepB').style.display = '';
+    document.getElementById('forgotNewPwInput').value        = '';
+    document.getElementById('forgotNewPwConfirmInput').value = '';
+    document.getElementById('forgotNewPwError').textContent  = '';
+    hideLoading();
+  } catch(e) {
+    document.getElementById('forgotCodeError').textContent = e.message;
+    hideLoading();
+  }
+};
+
+window.forgotReset = async function() {
+  const pw  = document.getElementById('forgotNewPwInput').value.trim();
+  const pw2 = document.getElementById('forgotNewPwConfirmInput').value.trim();
+  if (pw.length < 4) { document.getElementById('forgotNewPwError').textContent = s('forgotErrShort'); return; }
+  if (pw !== pw2)    { document.getElementById('forgotNewPwError').textContent = s('forgotErrMatch'); return; }
+  // Generate new recovery code after reset
+  const newCode = generateRecoveryCode();
+  showLoading();
+  try {
+    await setDoc(doc(db, 'system', 'settings'), { master_pw: pw, recovery_code: newCode }, { merge: true });
+    systemSettings.master_pw     = pw;
+    systemSettings.recovery_code = newCode;
+    hideLoading();
+    // Show new recovery code
+    alert(currentLang === 'ja'
+      ? `パスワードをリセットしました。\n\n新しいリカバリーコード：\n${newCode}\n\n必ず保存してください。`
+      : `Password has been reset.\n\nNew recovery code:\n${newCode}\n\nPlease save it now.`);
+    showLogin();
+    applyLangUI();
+  } catch(e) {
+    document.getElementById('forgotNewPwError').textContent = e.message;
+    hideLoading();
+  }
+};
+
+// ---- ENTER ADMIN ----
+async function enterAdmin() {
+  await loadAllGroups();
+  const savedCode = localStorage.getItem(SAVED_GROUP);
+  if (savedCode && groups.find(g => g.code === savedCode)) {
+    await selectGroup(savedCode, true);
+  }
+  ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
+  document.getElementById('adminScreen').classList.add('visible');
+  applyAdminRole();
+  applyLangUI();
+  hideLoading();
 }
 
-function renderNameSection() {
-  const count = saData.subjects.length || 1;
-  document.getElementById('subjectCount').value = String(count);
-  renderNameList();
+function applyAdminRole() {
+  const isMaster = currentRole === 'master';
+  document.getElementById('masterMenu').style.display = isMaster ? '' : 'none';
+  document.getElementById('userMenu').style.display   = isMaster ? 'none' : '';
+  const pill = document.getElementById('pageRolePill');
+  pill.textContent = isMaster ? s('rolemaster') : s('roleuser');
+  pill.className   = 'page-role-pill ' + (isMaster ? 'master' : 'user');
 }
 
-function renderNameList() {
-  const list = document.getElementById('nameList');
+window.goBack = function() {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.href = 'index.html';
+};
+
+// ---- GROUPS ----
+async function loadAllGroups() {
+  const snap = await getDocs(collection(db, 'groups'));
+  groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '' }));
+  groups.sort((a, b) => a.code.localeCompare(b.code));
+}
+
+async function selectGroup(code, doLoad) {
+  activeGroupCode = code;
+  localStorage.setItem(SAVED_GROUP, code);
+  document.getElementById('currentGroupBadge').textContent = code;
+  if (doLoad) {
+    showLoading();
+    await loadGroupData(code);
+    hideLoading();
+  }
+  renderGroupList();
+}
+
+async function loadGroupData(code) {
+  const [subjectsSnap, tasksSnap, configSnap] = await Promise.all([
+    getDocs(collection(db, 'groups', code, 'subjects')),
+    getDocs(collection(db, 'groups', code, 'tasks')),
+    getDoc(doc(db, 'groups', code, 'config', 'main')),
+  ]);
+  subjects = subjectsSnap.docs
+    .map(d => ({ id: d.data().id, name: d.data().name, order: d.data().order ?? d.data().id }))
+    .sort((a, b) => a.order - b.order);
+  tasks = tasksSnap.docs.map(d => ({
+    id: d.id, subject_id: d.data().subject_id,
+    content: d.data().content, deadline: d.data().deadline,
+  }));
+  const tileTitle   = configSnap.exists() ? (configSnap.data().tile_title || '') : '';
+  const oldDefaults = ['課題一覧','課題/業務一覧','List of Assignments/Works'];
+  document.getElementById('newTitle').value = oldDefaults.includes(tileTitle) ? '' : tileTitle;
+}
+
+function generateCode() { return String(Math.floor(10000 + Math.random() * 90000)); }
+
+window.createGroup = async function() {
+  const name = document.getElementById('newGroupName').value.trim();
+  let code; let attempts = 0;
+  do { code = generateCode(); attempts++; } while (groups.find(g => g.code === code) && attempts < 100);
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', code), { name, createdAt: new Date().toISOString() });
+    await setDoc(doc(db, 'groups', code, 'config', 'main'), { tile_title: '' });
+    groups.push({ code, name, createdAt: new Date().toISOString() });
+    groups.sort((a, b) => a.code.localeCompare(b.code));
+    document.getElementById('newGroupName').value = '';
+    subjects = []; tasks = [];
+    await selectGroup(code, false);
+    renderGroupList();
+    showToast(s('toastGroupCreated') + ' — ' + code);
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+
+async function deleteGroup(code) {
+  if (!confirm(s('confirmGroupDelete'))) return;
+  showLoading();
+  try {
+    for (const sub of ['subjects','tasks','submits','config']) {
+      const snap  = await getDocs(collection(db, 'groups', code, sub));
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      if (snap.docs.length) await batch.commit();
+    }
+    await deleteDoc(doc(db, 'groups', code));
+    groups = groups.filter(g => g.code !== code);
+    if (activeGroupCode === code) {
+      activeGroupCode = null; subjects = []; tasks = [];
+      document.getElementById('currentGroupBadge').textContent = s('noGroup');
+      localStorage.removeItem(SAVED_GROUP);
+    }
+    renderGroupList();
+    showToast(s('toastGroupDeleted'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+}
+
+function renderGroupList() {
+  const list = document.getElementById('groupList');
   list.innerHTML = '';
-  saData.subjects.forEach((subj) => {
+  if (!groups.length) {
+    list.innerHTML = `<div style="text-align:center;color:#aaa;font-size:13px;padding:12px 0">グループなし / No groups</div>`;
+    return;
+  }
+  groups.forEach(g => {
+    const isCurrent = g.code === activeGroupCode;
     const div = document.createElement('div');
-    div.className = 'subject-item';
+    div.className = 'group-item' + (isCurrent ? ' is-active' : '');
     div.innerHTML =
-      `<div class="subject-item-header">${s('subjectHeader')}${subj.id}</div>` +
-      `<div class="subject-name-row">` +
-        `<input class="form-input" id="sname${subj.id}" value="${escHtml(subj.name)}" placeholder="${escHtml(s('subjectPlaceholder'))}">` +
-        `<button class="btn btn-save-small" onclick="saveName(${subj.id})">${s('saveNameBtn')}</button>` +
+      `<div class="group-item-info">` +
+        `<div class="group-item-code">${escHtml(g.code)}</div>` +
+        (g.name ? `<div class="group-item-name">${escHtml(g.name)}</div>` : '') +
+      `</div>` +
+      `<div class="group-item-actions">` +
+        `<button class="btn-select${isCurrent ? ' current' : ''}">${isCurrent ? s('groupCurrentBtn') : s('groupSelectBtn')}</button>` +
+        `<button class="btn-danger">${s('groupDeleteBtn')}</button>` +
       `</div>`;
+    const [selBtn, delBtn] = div.querySelectorAll('button');
+    if (!isCurrent) selBtn.addEventListener('click', () => selectGroup(g.code, true));
+    delBtn.addEventListener('click', () => deleteGroup(g.code));
     list.appendChild(div);
   });
 }
 
-function applySubjectCount() {
+// ---- SECTION NAV ----
+const ALL_SECTIONS = ['groups','title','name','task','pw','reset'];
+
+function showSection(name) {
+  ALL_SECTIONS.forEach(sec => {
+    document.getElementById('sec-' + sec).classList.remove('active');
+    const mc  = document.getElementById('mc-' + sec);
+    const mcu = document.getElementById('mc-' + sec + '-u');
+    if (mc)  mc.classList.remove('active-menu');
+    if (mcu) mcu.classList.remove('active-menu');
+  });
+  if (currentSection === name) { currentSection = null; return; }
+  document.getElementById('sec-' + name).classList.add('active');
+  const mc  = document.getElementById('mc-' + name);
+  const mcu = document.getElementById('mc-' + name + '-u');
+  if (mc)  mc.classList.add('active-menu');
+  if (mcu) mcu.classList.add('active-menu');
+  currentSection = name;
+  if (name === 'name')   renderNameSection();
+  if (name === 'task')   renderTaskList();
+  if (name === 'groups') renderGroupList();
+  if (name === 'pw')     renderPwSection();
+  document.getElementById('sec-' + name).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.showSection = showSection;
+
+function requireGroup() {
+  if (!activeGroupCode) { showToast(s('noGroupSelected')); return false; }
+  return true;
+}
+
+// ---- TITLE ----
+window.saveTitle = async function() {
+  if (!requireGroup()) return;
+  const title = document.getElementById('newTitle').value.trim();
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', activeGroupCode, 'config', 'main'), { tile_title: title }, { merge: true });
+    showToast(s('toastTitleSaved'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+
+// ---- SUBJECTS ----
+function renderNameSection() {
+  document.getElementById('subjectCount').value = String(subjects.length || 1);
+  renderNameList();
+}
+function renderNameList() {
+  const list = document.getElementById('nameList');
+  list.innerHTML = '';
+  subjects.forEach(subj => {
+    const div = document.createElement('div');
+    div.className = 'subject-item';
+    div.innerHTML =
+      `<div class="subject-item-header">${escHtml(s('subjectHeader'))}${subj.id}</div>` +
+      `<div class="subject-name-row">` +
+        `<input class="form-input-sm" id="sname${subj.id}" value="${escHtml(subj.name)}" placeholder="${escHtml(s('subjectPlaceholder'))}">` +
+        `<button class="btn-save-sm">${s('saveNameBtn')}</button>` +
+      `</div>`;
+    div.querySelector('button').addEventListener('click', () => saveName(subj.id));
+    list.appendChild(div);
+  });
+}
+
+window.applySubjectCount = async function() {
+  if (!requireGroup()) return;
   const newCount = parseInt(document.getElementById('subjectCount').value, 10);
-  const current = saData.subjects.length;
-  if (newCount > current) {
-    for (let i = current + 1; i <= newCount; i++) {
-      saData.subjects.push({ id: i, name: s('defaultSubjectName', i) });
-    }
-  } else if (newCount < current) {
+  const current  = subjects.length;
+  if (newCount < current) {
     if (!confirm(s('confirmCountDown', newCount, newCount + 1))) {
       document.getElementById('subjectCount').value = String(current);
       return;
     }
-    const keepIds = saData.subjects.slice(0, newCount).map(subj => subj.id);
-    saData.subjects = saData.subjects.slice(0, newCount);
-    saData.tasks = saData.tasks.filter(task => keepIds.includes(task.subject_id));
   }
-  saveSaData(saData);
-  renderNameList();
-  showToast(s('toastCountApplied'));
-}
+  showLoading();
+  try {
+    const batch = writeBatch(db);
+    if (newCount > current) {
+      for (let i = current + 1; i <= newCount; i++) {
+        batch.set(doc(db, 'groups', activeGroupCode, 'subjects', 's' + i), { id: i, name: s('defaultSubjectName', i), order: i });
+        subjects.push({ id: i, name: s('defaultSubjectName', i), order: i });
+      }
+    } else if (newCount < current) {
+      const removeIds = subjects.slice(newCount).map(x => x.id);
+      removeIds.forEach(id => batch.delete(doc(db, 'groups', activeGroupCode, 'subjects', 's' + id)));
+      tasks.filter(t => removeIds.includes(t.subject_id)).forEach(t =>
+        batch.delete(doc(db, 'groups', activeGroupCode, 'tasks', t.id)));
+      subjects = subjects.slice(0, newCount);
+      tasks    = tasks.filter(t => !removeIds.includes(t.subject_id));
+    }
+    await batch.commit();
+    renderNameList();
+    showToast(s('toastCountApplied'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
 
-function saveName(id) {
+async function saveName(id) {
+  if (!requireGroup()) return;
   const name = document.getElementById('sname' + id).value.trim() || s('subjectPlaceholder');
-  const subj = saData.subjects.find(x => x.id === id);
-  if (subj) { subj.name = name; saveSaData(saData); showToast(s('toastNameSaved')); }
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', activeGroupCode, 'subjects', 's' + id), { id, name, order: id }, { merge: true });
+    const subj = subjects.find(x => x.id === id);
+    if (subj) subj.name = name;
+    showToast(s('toastNameSaved'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
 }
 
+// ---- TASKS ----
 function fmtDate(dt) {
   const d = new Date(dt);
   return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' +
     String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 function renderTaskList() {
   const list = document.getElementById('taskList');
   list.innerHTML = '';
-  if (!saData.subjects.length) {
+  if (!subjects.length) {
     list.innerHTML = `<div style="text-align:center;color:#aaa;font-size:14px;padding:20px">${s('noSubjectMsg')}</div>`;
     return;
   }
   const minLabels = s('minOptions');
-  const minVals = ['00','15','30','45'];
-  saData.subjects.forEach(subj => {
-    const subTasks = saData.tasks.filter(task => task.subject_id === subj.id);
+  const minVals   = ['00','15','30','45'];
+  subjects.forEach(subj => {
+    const subTasks = tasks.filter(t => t.subject_id === subj.id);
     const div = document.createElement('div');
     div.className = 'subject-item';
-    let tasksInner = subTasks.length ? '' : `<div class="no-tasks">${s('noTasks')}</div>`;
+    let html = subTasks.length ? '' : `<div class="no-tasks">${s('noTasks')}</div>`;
     subTasks.forEach(task => {
-      tasksInner +=
+      html +=
         `<div class="task-item">` +
           `<div class="task-item-info">` +
             `<div class="task-item-content">${escHtml(task.content)}</div>` +
-            `<div class="task-item-deadline">${s('deadlinePrefix')}${fmtDate(task.deadline)}</div>` +
+            `<div class="task-item-deadline">${s('deadlinePrefix')}${escHtml(fmtDate(task.deadline))}</div>` +
           `</div>` +
-          `<button class="btn btn-danger" onclick="deleteTask('${escHtml(task.id)}')">${s('deleteBtn')}</button>` +
+          `<button class="btn-danger del-task" data-id="${escHtml(task.id)}">${s('deleteBtn')}</button>` +
         `</div>`;
     });
-    const hourOpts = Array.from({length:24},(_,h) =>
-      `<option value="${String(h).padStart(2,'0')}">${s('hourSuffix', h)}</option>`
-    ).join('');
-    const minOpts = minVals.map((v,i) => `<option value="${v}">${minLabels[i]}</option>`).join('');
+    const hourOpts = Array.from({length:24},(_,h) => `<option value="${String(h).padStart(2,'0')}">${s('hourSuffix',h)}</option>`).join('');
+    const minOpts  = minVals.map((v,i) => `<option value="${v}">${minLabels[i]}</option>`).join('');
     div.innerHTML =
-      `<div class="subject-item-header">${s('subjectTaskHeader', subj.id, escHtml(subj.name))}</div>` +
-      `<div class="task-list-scroll">${tasksInner}</div>` +
+      `<div class="subject-item-header">${escHtml(s('subjectTaskHeader', subj.id, subj.name))}</div>` +
+      `<div class="task-list-scroll">${html}</div>` +
       `<div class="add-task-box">` +
         `<div class="section-title">${s('addTaskTitle')}</div>` +
-        `<div class="form-row">` +
-          `<label class="form-label">${s('taskContentLabel')}</label>` +
-          `<textarea class="form-textarea" id="tc${subj.id}" placeholder="${escHtml(s('taskContentHolder'))}"></textarea>` +
-        `</div>` +
-        `<div class="form-row">` +
-          `<label class="form-label">${s('deadlineLabel')}</label>` +
-          `<input class="form-input" type="date" id="td${subj.id}">` +
-        `</div>` +
+        `<div class="form-row"><label class="form-label">${s('taskContentLabel')}</label>` +
+          `<textarea class="form-textarea" id="tc${subj.id}" placeholder="${escHtml(s('taskContentHolder'))}"></textarea></div>` +
+        `<div class="form-row"><label class="form-label">${s('deadlineLabel')}</label>` +
+          `<input class="form-input-sm" type="date" id="td${subj.id}"></div>` +
         `<div class="form-row-inline">` +
           `<select class="form-select" id="th${subj.id}">${hourOpts}</select>` +
           `<select class="form-select" id="tm${subj.id}">${minOpts}</select>` +
         `</div>` +
-        `<button class="btn btn-primary" onclick="addTask(${subj.id})">${s('addTaskBtn')}</button>` +
+        `<button class="btn btn-primary add-btn">${s('addTaskBtn')}</button>` +
       `</div>`;
+    div.querySelectorAll('.del-task').forEach(btn => btn.addEventListener('click', () => deleteTask(btn.dataset.id)));
+    div.querySelector('.add-btn').addEventListener('click', () => addTask(subj.id));
     list.appendChild(div);
   });
 }
 
-function addTask(subjId) {
+async function addTask(subjId) {
+  if (!requireGroup()) return;
   const content = document.getElementById('tc' + subjId).value.trim();
   const date    = document.getElementById('td' + subjId).value;
   const hour    = document.getElementById('th' + subjId).value;
   const min     = document.getElementById('tm' + subjId).value;
   if (!content || !date) { showToast(s('inputRequired')); return; }
   const deadline = `${date}T${hour}:${min}:00`;
-  const id = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-  saData.tasks.push({ id, subject_id: subjId, content, deadline });
-  saveSaData(saData);
-  renderTaskList();
-  showToast(s('toastTaskAdded'));
+  const id       = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', activeGroupCode, 'tasks', id), { subject_id: subjId, content, deadline });
+    tasks.push({ id, subject_id: subjId, content, deadline });
+    renderTaskList();
+    showToast(s('toastTaskAdded'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
 }
 
-function deleteTask(taskId) {
+async function deleteTask(taskId) {
   if (!confirm(s('confirmDeleteTask'))) return;
-  saData.tasks = saData.tasks.filter(task => task.id !== taskId);
-  saveSaData(saData);
-  renderTaskList();
-  showToast(s('toastTaskDeleted'));
+  showLoading();
+  try {
+    await deleteDoc(doc(db, 'groups', activeGroupCode, 'tasks', taskId));
+    tasks = tasks.filter(t => t.id !== taskId);
+    renderTaskList();
+    showToast(s('toastTaskDeleted'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
 }
 
-function resetSubmits() {
+// ---- PW SECTION ----
+function renderPwSection() {
+  document.getElementById('currentPwVal').textContent    = systemSettings.user_pw || DEFAULT_USER_PW;
+  document.getElementById('newPwInput').value            = '';
+  document.getElementById('newMasterPwInput').value      = '';
+  document.getElementById('newMasterPwConfirmInput').value = '';
+  document.getElementById('masterPwChangeError').textContent = '';
+}
+
+window.saveMasterPw = async function() {
+  const pw  = document.getElementById('newMasterPwInput').value.trim();
+  const pw2 = document.getElementById('newMasterPwConfirmInput').value.trim();
+  if (pw.length < 4) { document.getElementById('masterPwChangeError').textContent = s('masterPwChangeErrShort'); return; }
+  if (pw !== pw2)    { document.getElementById('masterPwChangeError').textContent = s('masterPwChangeErrMatch'); return; }
+  showLoading();
+  try {
+    await setDoc(doc(db, 'system', 'settings'), { master_pw: pw }, { merge: true });
+    systemSettings.master_pw = pw;
+    document.getElementById('newMasterPwInput').value        = '';
+    document.getElementById('newMasterPwConfirmInput').value = '';
+    document.getElementById('masterPwChangeError').textContent = '';
+    showToast(s('toastMasterPwSaved'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+
+window.saveUserPw = async function() {
+  const newPw = document.getElementById('newPwInput').value.trim();
+  if (!newPw) { showToast(s('pwRequired')); return; }
+  showLoading();
+  try {
+    await setDoc(doc(db, 'system', 'settings'), { user_pw: newPw }, { merge: true });
+    systemSettings.user_pw = newPw;
+    document.getElementById('currentPwVal').textContent = newPw;
+    document.getElementById('newPwInput').value = '';
+    showToast(s('toastUserPwSaved'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+
+// ---- RESET ----
+window.resetSubmits = async function() {
+  if (!requireGroup()) return;
   if (!confirm(s('confirmResetSubmit'))) return;
-  localStorage.removeItem(SUBMIT_KEY);
-  showToast(s('toastResetSubmit'));
-}
-
-function resetAll() {
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', activeGroupCode, 'submits', 'main'), {});
+    showToast(s('toastResetSubmit'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+window.resetAll = async function() {
+  if (!requireGroup()) return;
   if (!confirm(s('confirmResetAll'))) return;
-  localStorage.removeItem(SA_KEY);
-  localStorage.removeItem(SUBMIT_KEY);
-  saData = { tile_title: '', subjects: [], tasks: [] };
-  showToast(s('toastResetAll'));
-  if (currentSection === 'task') renderTaskList();
-  if (currentSection === 'name') renderNameSection();
+  showLoading();
+  try {
+    const batch = writeBatch(db);
+    const [ss, ts] = await Promise.all([
+      getDocs(collection(db, 'groups', activeGroupCode, 'subjects')),
+      getDocs(collection(db, 'groups', activeGroupCode, 'tasks')),
+    ]);
+    ss.docs.forEach(d => batch.delete(d.ref));
+    ts.docs.forEach(d => batch.delete(d.ref));
+    batch.delete(doc(db, 'groups', activeGroupCode, 'submits', 'main'));
+    batch.set(doc(db, 'groups', activeGroupCode, 'config', 'main'), { tile_title: '' });
+    await batch.commit();
+    subjects = []; tasks = [];
+    document.getElementById('newTitle').value = '';
+    if (currentSection === 'task') renderTaskList();
+    if (currentSection === 'name') renderNameSection();
+    showToast(s('toastResetAll'));
+  } catch(e) { showToast(e.message); }
+  hideLoading();
+};
+
+// ---- INIT ----
+async function init() {
+  showLoading();
+  applyLangUI();
+
+  try {
+    const snap = await getDoc(doc(db, 'system', 'settings'));
+
+    const data = snap.exists() ? snap.data() : {};
+    if (!data.master_pw || !data.recovery_code) {
+      // 初回セットアップ：master_pwまたはrecovery_codeが未設定 → 直接セットアップウィザードへ
+      isFirstSetup = true;
+      hideLoading();
+      showSetup();
+      showSetupStep(1);
+      applyLangUI();
+      return;
+    }
+
+    systemSettings = snap.data();
+    isFirstSetup   = false;
+    document.getElementById('firstSetupPanel').style.display  = 'none';
+    document.getElementById('normalLoginPanel').style.display = '';
+
+    // セッション復元
+    const savedRole = sessionStorage.getItem(SESSION_KEY);
+    if (savedRole) {
+      currentRole = savedRole;
+      await loadAllGroups();
+      const savedCode = localStorage.getItem(SAVED_GROUP);
+      if (savedCode && groups.find(g => g.code === savedCode)) {
+        await selectGroup(savedCode, true);
+      }
+      ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
+      document.getElementById('adminScreen').classList.add('visible');
+      applyAdminRole();
+      applyLangUI();
+      hideLoading();
+      return;
+    }
+
+    hideLoading();
+    showLogin();
+
+  } catch(e) {
+    hideLoading();
+    if (e.code === 'permission-denied' || e.message.includes('permission') || e.message.includes('PERMISSION')) {
+      document.getElementById('rulesNotice').style.display     = 'block';
+      document.getElementById('normalLoginPanel').style.display = 'none';
+      document.getElementById('firstSetupPanel').style.display  = 'none';
+      showLogin();
+    } else {
+      // Firestore到達不能でも初回セットアップとして扱う
+      isFirstSetup = true;
+      showSetup();
+      showSetupStep(1);
+      applyLangUI();
+    }
+  }
 }
 
-applyLangUI();
+init();
 </script>
 </body>
 </html>
