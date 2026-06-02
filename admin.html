@@ -1489,15 +1489,22 @@ window.forgotReset = async function() {
 // ---- ENTER ADMIN ----
 async function enterAdmin() {
   await loadAllGroups();
-  // ログイン時のグループコードを優先的に選択
-  if (loginGroupCode && myGroups.find(g => g.code === loginGroupCode)) {
-    await selectGroup(loginGroupCode, true);
+  // ユーザーの場合は常に loginGroupCode のグループに入室（他のグループを選択する権限がないため）
+  if (currentRole === 'user') {
+    if (loginGroupCode && myGroups.length > 0) {
+      await selectGroup(loginGroupCode, true);
+    }
   } else {
-    const savedCode = localStorage.getItem(SAVED_GROUP);
-    if (savedCode && myGroups.find(g => g.code === savedCode)) {
-      await selectGroup(savedCode, true);
-    } else if (myGroups.length > 0) {
-      await selectGroup(myGroups[0].code, true);
+    // マスターの場合はログイン時のグループコードを優先的に選択
+    if (loginGroupCode && myGroups.find(g => g.code === loginGroupCode)) {
+      await selectGroup(loginGroupCode, true);
+    } else {
+      const savedCode = localStorage.getItem(SAVED_GROUP);
+      if (savedCode && myGroups.find(g => g.code === savedCode)) {
+        await selectGroup(savedCode, true);
+      } else if (myGroups.length > 0) {
+        await selectGroup(myGroups[0].code, true);
+      }
     }
   }
   ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
@@ -1564,9 +1571,13 @@ async function loadAllGroups() {
   const snap = await getDocs(collection(db, 'groups'));
   groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' }));
   groups.sort((a, b) => a.code.localeCompare(b.code));
-  // 自分のmaster_idまたはlocalStorageで管理しているグループのみ表示
-  const myGroupCodes = getMyGroupCodes();
-  myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodes.includes(g.code));
+  // ユーザーの場合は loginGroupCode のグループのみ、マスターの場合は自分のmaster_idまたはlocalStorageで管理しているグループのみ表示
+  if (currentRole === 'user' && loginGroupCode) {
+    myGroups = groups.filter(g => g.code === loginGroupCode);
+  } else {
+    const myGroupCodes = getMyGroupCodes();
+    myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodes.includes(g.code));
+  }
 }
 
 async function selectGroup(code, doLoad, skipRender) {
