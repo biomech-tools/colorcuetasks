@@ -418,7 +418,12 @@ function applyLangUI() {
 }
 
 window.goAdmin = function() {
-  location.href = groupCode ? `admin.html?g=${groupCode}` : 'admin.html';
+  // groupCode が設定されていればそれを使う
+  // ログアウト直後など groupCode が null の場合は localStorage/sessionStorage から復元
+  const code = groupCode
+    || sessionStorage.getItem(SESSION_GROUP)
+    || (localStorage.getItem(SAVED_REMEMBER) === 'yes' ? localStorage.getItem(SAVED_GROUP) : null);
+  location.href = code ? `admin.html?g=${code}` : 'admin.html';
 };
 
 window.onCodeInput = function(el) {
@@ -519,13 +524,15 @@ window.reloadData = async function() {
 };
 
 window.logout = function() {
+  // ログアウト時にグループコードを sessionStorage に残しておく
+  // （管理画面ボタンが ?g= 付きで遷移できるようにするため）
+  if (groupCode) sessionStorage.setItem(SESSION_GROUP, groupCode);
   groupCode  = null;
   appData    = { tile_title: '', subjects: [], tasks: [] };
   submitData = {};
   clearGroupCache();
   document.getElementById('appScreen').classList.remove('visible');
   document.getElementById('codeError').textContent = '';
-  sessionStorage.removeItem(SESSION_GROUP);
   const remember = localStorage.getItem(SAVED_REMEMBER) === 'yes';
   const saved    = remember ? localStorage.getItem(SAVED_GROUP) : null;
   if (saved) {
