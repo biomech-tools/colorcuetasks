@@ -377,10 +377,11 @@ service cloud.firestore {<br>
       <div class="form-error" id="setup3Error"></div>
       <button class="btn btn-primary" id="setup3CompleteBtn" onclick="setupStep3Complete()"></button>
     </div>
+    <div class="center-row" style="margin-top:16px">
+      <button class="text-link" onclick="location.href='index.html'" id="setupBackTopBtn"></button>
+    </div>
   </div>
 </div>
-
-<!-- ===== FORGOT PW SCREEN ===== -->
 <div class="screen-center" id="forgotScreen">
   <div class="top-lang">
     <div class="lang-switcher">
@@ -980,6 +981,7 @@ function applyLangUI() {
 
   // Login
   set('backTopBtn',            'backTopBtn');
+  set('setupBackTopBtn',       'backTopBtn');
   set('backToLoginBtn',        'backToLoginBtn');
   set('loginModeExistBtn',     'loginModeExistBtn');
   set('loginModeNewBtn',       'loginModeNewBtn');
@@ -1561,9 +1563,17 @@ window.masterLogout = function() {
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY + '_group');
   localStorage.removeItem(MASTER_REMEMBER_KEY);
-  showLogin();
-  showModeSelect();
-  applyLangUI();
+  // ?g= パラメータがある場合はPW入力画面に戻る（同じグループに再ログインできる）
+  // ない場合はメイン画面へ
+  const paramGroup = new URLSearchParams(location.search).get('g');
+  if (paramGroup) {
+    showLogin();
+    hideAllLoginPanels();
+    document.getElementById('normalLoginPanel').style.display = '';
+    applyLangUI();
+  } else {
+    location.href = 'index.html';
+  }
 };
 
 // ---- GROUPS ----
@@ -2030,7 +2040,6 @@ async function init() {
           currentRole = 'master';
           sessionStorage.setItem(SESSION_KEY, 'master');
           sessionStorage.setItem(SESSION_KEY + '_group', paramGroup);
-          // loadAllGroups を先に完了させて myGroups を確定してから selectGroup する
           await loadAllGroups();
           await selectGroup(paramGroup, true, true);
           ['loginScreen','setupScreen','forgotScreen'].forEach(id => document.getElementById(id).classList.remove('visible'));
@@ -2041,6 +2050,7 @@ async function init() {
           hideLoading();
           return;
         }
+        // PW入力画面（?g= 付きなので戻ればメイン画面へ）
         showLogin();
         hideAllLoginPanels();
         document.getElementById('normalLoginPanel').style.display = '';
@@ -2048,11 +2058,10 @@ async function init() {
         applyLangUI();
         return;
       }
-    } catch(e) { /* フォールスルーしてモード選択へ */ }
+    } catch(e) { /* グループ取得失敗 → メイン画面へ */ }
+    // グループが存在しない or 取得エラー → メイン画面に戻す
     hideLoading();
-    showLogin();
-    showModeSelect();
-    applyLangUI();
+    location.href = 'index.html';
     return;
   }
 
