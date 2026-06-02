@@ -1571,12 +1571,17 @@ async function loadAllGroups() {
   const snap = await getDocs(collection(db, 'groups'));
   groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' }));
   groups.sort((a, b) => a.code.localeCompare(b.code));
-  // ユーザーの場合は loginGroupCode のグループのみ、マスターの場合は自分のmaster_idまたはlocalStorageで管理しているグループのみ表示
   if (currentRole === 'user' && loginGroupCode) {
+    // ユーザーは loginGroupCode のグループのみ
     myGroups = groups.filter(g => g.code === loginGroupCode);
   } else {
+    // マスター: masterId か localStorage か loginGroupCode で一致するグループ
     const myGroupCodes = getMyGroupCodes();
-    myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodes.includes(g.code));
+    myGroups = groups.filter(g =>
+      (masterId && g.master_id === masterId) ||
+      myGroupCodes.includes(g.code) ||
+      (loginGroupCode && g.code === loginGroupCode)
+    );
   }
 }
 
@@ -2063,6 +2068,7 @@ async function init() {
         loadGroupData(savedGroup),
       ]);
       systemSettings = settingsSnap.exists() ? settingsSnap.data() : { master_pw: '', user_pw: DEFAULT_USER_PW, recovery_code: '' };
+      await loadAllGroups();
       activeGroupCode = savedGroup;
       localStorage.setItem(SAVED_GROUP, savedGroup);
       document.getElementById('currentGroupBadge').textContent = savedGroup;
@@ -2070,7 +2076,6 @@ async function init() {
       document.getElementById('adminScreen').classList.add('visible');
       applyAdminRole();
       applyLangUI();
-      await loadAllGroups();
       renderGroupList();
       hideLoading();
       return;
