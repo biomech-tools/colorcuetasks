@@ -650,18 +650,6 @@ async function init() {
   showLoading();
   applyLangUI();
 
-  let hasGroups = false;
-  try {
-    const groupsSnap = await getDocs(collection(db, 'groups'));
-    hasGroups = !groupsSnap.empty;
-  } catch(_) {}
-
-  if (!hasGroups) {
-    hideLoading();
-    document.getElementById('setupScreen').classList.add('visible');
-    return;
-  }
-
   // 保持チェックON → localStorageのコードで直接入室
   const remember = localStorage.getItem(SAVED_REMEMBER) === 'yes';
   const savedCode = remember ? localStorage.getItem(SAVED_GROUP) : null;

@@ -378,7 +378,7 @@ service cloud.firestore {<br>
       <button class="btn btn-primary" id="setup3CompleteBtn" onclick="setupStep3Complete()"></button>
     </div>
     <div class="center-row" style="margin-top:16px">
-      <button class="text-link" onclick="location.href='index.html'" id="setupBackTopBtn"></button>
+      <button class="text-link" onclick="cancelSetupAndGoBack()" id="setupBackTopBtn"></button>
     </div>
   </div>
 </div>
@@ -1538,6 +1538,27 @@ window.goBack = function() {
   }
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY + '_group');
+  location.href = 'index.html';
+};
+
+// セットアップ画面の「メイン画面に戻る」: 未完了グループを削除してから戻る
+window.cancelSetupAndGoBack = async function() {
+  if (isFirstSetup && loginGroupCode) {
+    try {
+      showLoading();
+      for (const sub of ['subjects','tasks','submits','config','settings']) {
+        const snap = await getDocs(collection(db, 'groups', loginGroupCode, sub));
+        if (snap.docs.length) {
+          const batch = writeBatch(db);
+          snap.docs.forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+      }
+      await deleteDoc(doc(db, 'groups', loginGroupCode));
+      const arr = getMyGroupCodes().filter(c => c !== loginGroupCode);
+      localStorage.setItem('cct_my_groups_v1', JSON.stringify(arr));
+    } catch(_) { /* 削除失敗は無視してメイン画面へ */ }
+  }
   location.href = 'index.html';
 };
 
