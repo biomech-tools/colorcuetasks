@@ -487,6 +487,7 @@ service cloud.firestore {<br>
   <!-- GROUPS -->
   <div class="section" id="sec-groups">
     <div class="section-title" id="sec-groups-heading"></div>
+    <div id="debugPanel" style="display:none;background:#1a1a2e;color:#00ff88;font-size:11px;font-family:monospace;padding:8px;border-radius:6px;margin-bottom:8px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;border:1px solid #00ff88"></div>
     <div class="group-list" id="groupList"></div>
     <div class="new-group-box">
       <div class="section-title" id="newGroupBoxTitle"></div>
@@ -1598,63 +1599,71 @@ window.masterLogout = function() {
 };
 
 // ---- GROUPS ----
+function dbg(msg) {
+  const p = document.getElementById('debugPanel');
+  if (p) { p.style.display = ''; p.textContent += msg + '\n'; }
+}
+
 async function loadAllGroups() {
   const myGroupCodes = getMyGroupCodes();
+  dbg('--- loadAllGroups ---');
+  dbg('masterId(local): ' + masterId);
+  dbg('loginGroupCode: ' + loginGroupCode);
+  dbg('myGroupCodes: ' + JSON.stringify(myGroupCodes));
 
-  // loginGroupCode の Firestore 上の master_id を正として取得する。
-  // 別デバイスからのアクセスでは localStorage の masterId が異なるため、
-  // Firestore 上の master_id を優先して全グループ検索に使う。
   let effectiveMasterIds = masterId ? [masterId] : [];
   if (currentRole === 'master' && loginGroupCode) {
     try {
       const gSnap = await getDoc(doc(db, 'groups', loginGroupCode));
       if (gSnap.exists()) {
         const remoteMasterId = gSnap.data().master_id;
+        dbg('remoteMasterId from Firestore: ' + remoteMasterId);
         if (remoteMasterId) {
           if (!effectiveMasterIds.includes(remoteMasterId)) {
             effectiveMasterIds.push(remoteMasterId);
           }
-          // masterId 未設定のデバイスは恒久的に登録する
           if (!masterId) {
             masterId = remoteMasterId;
             localStorage.setItem(MASTER_ID_KEY, masterId);
             effectiveMasterIds = [masterId];
           }
         }
+      } else {
+        dbg('group doc NOT found in Firestore');
       }
-    } catch(_) {}
+    } catch(e) { dbg('getDoc error: ' + e.message); }
   }
+  dbg('effectiveMasterIds: ' + JSON.stringify(effectiveMasterIds));
 
-  // master_id クエリで自分のグループを取得する。
-  // getDocs(collection) は Firestore ルールにより他グループが除外されるため使わない。
   groups = [];
   const fetched = new Set();
 
-  // 各 masterId 候補で絞り込みクエリ
   await Promise.all(effectiveMasterIds.map(async mid => {
     try {
       const q = query(collection(db, 'groups'), where('master_id', '==', mid));
       const snap = await getDocs(q);
+      dbg('query master_id=' + mid + ' => ' + snap.docs.length + ' docs');
       snap.docs.forEach(d => {
+        dbg('  found: ' + d.id);
         if (!fetched.has(d.id)) {
           groups.push({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' });
           fetched.add(d.id);
         }
       });
-    } catch(_) {}
+    } catch(e) { dbg('query error mid=' + mid + ': ' + e.message); }
   }));
 
-  // localStorage の既知コードを個別取得（クエリで取れなかった分・master_id 未設定グループの救済）
   const codesFromStorage = [...myGroupCodes];
   if (loginGroupCode && !codesFromStorage.includes(loginGroupCode)) codesFromStorage.push(loginGroupCode);
   await Promise.all(codesFromStorage.filter(c => !fetched.has(c)).map(async c => {
     try {
       const snap = await getDoc(doc(db, 'groups', c));
       if (snap.exists()) {
+        dbg('storage fallback found: ' + snap.id);
         groups.push({ code: snap.id, name: snap.data().name || '', createdAt: snap.data().createdAt || '', master_id: snap.data().master_id || '' });
         fetched.add(snap.id);
       }
-    } catch(_) {}
+    } catch(e) { dbg('storage getDoc error ' + c + ': ' + e.message); }
   }));
 
   groups.sort((a, b) => a.code.localeCompare(b.code));
@@ -1668,6 +1677,8 @@ async function loadAllGroups() {
       (loginGroupCode && g.code === loginGroupCode)
     );
   }
+  dbg('myGroups count: ' + myGroups.length);
+  dbg('myGroups: ' + myGroups.map(g => g.code).join(', '));
 }
 
 async function selectGroup(code, doLoad, skipRender) {
