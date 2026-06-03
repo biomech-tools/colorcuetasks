@@ -278,6 +278,18 @@ service cloud.firestore {<br>
       </div>
     </div>
 
+    <!-- グループ番号確認パネル（新規作成前の確認）-->
+    <div id="newGroupConfirmPanel" style="display:none">
+      <div class="form-label" id="newGroupConfirmMsg" style="margin-bottom:12px;line-height:1.6"></div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:0.25em;text-align:center;font-family:'SF Mono','Consolas',monospace;margin-bottom:16px;color:#111" id="newGroupConfirmCode"></div>
+      <div class="form-row">
+        <label class="form-label" id="newGroupConfirmNameLabel"></label>
+        <input class="form-input-sm" id="newGroupConfirmNameInput" placeholder="">
+      </div>
+      <div class="form-error" id="newGroupConfirmError"></div>
+      <button class="btn btn-primary" id="newGroupConfirmBtn" onclick="doConfirmNewGroup()"></button>
+    </div>
+
     <!-- 初回セットアップ（パスワード未設定） -->
     <div id="firstSetupPanel" style="display:none">
       <button class="btn btn-primary" id="firstSetupBtn" onclick="doFirstSetup()"></button>
@@ -641,6 +653,9 @@ const STRINGS = {
     masterEntryPwLabel:    'マスターパスワード',
     masterEntryLoginBtn:   '管理画面に入る',
     masterEntryNewBtn:     'パスワード新規作成',
+    newGroupConfirmMsg:    'グループを作成し、次の番号を割り当てます。',
+    newGroupConfirmNameLabel: 'グループの説明（任意）',
+    newGroupConfirmBtn:    '作成して続ける',
     loginPwLabelMaster:    'マスターパスワード',
     loginPwLabelUser:      'ユーザーパスワード',
     loginBtn:              'ログイン',
@@ -785,6 +800,9 @@ const STRINGS = {
     masterEntryPwLabel:    'Master Password',
     masterEntryLoginBtn:   'Enter admin panel',
     masterEntryNewBtn:     'New password setup',
+    newGroupConfirmMsg:    'A group will be created and assigned the following code:',
+    newGroupConfirmNameLabel: 'Group description (optional)',
+    newGroupConfirmBtn:    'Create & continue',
     loginPwLabelMaster:    'Master Password',
     loginPwLabelUser:      'User Password',
     loginBtn:              'Login',
@@ -1009,6 +1027,9 @@ function applyLangUI() {
   set('masterEntryPwLabel',    'masterEntryPwLabel');
   set('masterEntryLoginBtn',   'masterEntryLoginBtn');
   set('masterEntryNewBtn',     'masterEntryNewBtn');
+  set('newGroupConfirmMsg',    'newGroupConfirmMsg');
+  set('newGroupConfirmNameLabel','newGroupConfirmNameLabel');
+  set('newGroupConfirmBtn',    'newGroupConfirmBtn');
   // Role tabs
   const mTabStr = isJa ? 'マスター <span class="role-badge master">MASTER</span>'
                        : 'Master <span class="role-badge master">MASTER</span>';
@@ -1096,7 +1117,7 @@ function set(id, key) {
 
 // ---- HELPER: パネル切替 ----
 function hideAllLoginPanels() {
-  ['loginModePanel','myGroupPanel','groupCodePanel','masterEntryPanel','firstSetupPanel','normalLoginPanel'].forEach(id => {
+  ['loginModePanel','myGroupPanel','groupCodePanel','masterEntryPanel','newGroupConfirmPanel','firstSetupPanel','normalLoginPanel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1312,7 +1333,7 @@ window.doMasterEntryLogin = async function() {
   }
 };
 
-// 新規セットアップ：グループを自動作成してsetupWizardへ
+// 新規セットアップ：コードを先行生成して確認パネルを表示
 window.doMasterEntryNew = async function() {
   if (!masterId) {
     masterId = generateMasterId();
@@ -1329,7 +1350,29 @@ window.doMasterEntryNew = async function() {
     const existingCodes = snap.docs.map(d => d.id);
     let code; let attempts = 0;
     do { code = generateCode(); attempts++; } while (existingCodes.includes(code) && attempts < 100);
-    await setDoc(doc(db, 'groups', code), { name: '', createdAt: new Date().toISOString(), master_id: masterId });
+    hideLoading();
+    hideAllLoginPanels();
+    // 確認パネルを表示
+    document.getElementById('newGroupConfirmCode').textContent  = code;
+    document.getElementById('newGroupConfirmNameInput').value   = '';
+    document.getElementById('newGroupConfirmError').textContent = '';
+    document.getElementById('newGroupConfirmPanel').style.display = '';
+    applyLangUI();
+  } catch(e) {
+    document.getElementById('masterEntryError').textContent = e.message;
+    hideLoading();
+  }
+};
+
+// 確認パネルで「作成して続ける」→ Firestore書き込み→ setupWizard
+window.doConfirmNewGroup = async function() {
+  const code = document.getElementById('newGroupConfirmCode').textContent.trim();
+  const name = document.getElementById('newGroupConfirmNameInput').value.trim();
+  if (!code || code.length !== 5) return;
+  document.getElementById('newGroupConfirmError').textContent = '';
+  showLoading();
+  try {
+    await setDoc(doc(db, 'groups', code), { name, createdAt: new Date().toISOString(), master_id: masterId });
     await setDoc(doc(db, 'groups', code, 'config', 'main'), { tile_title: '' });
     addMyGroupCode(code);
     loginGroupCode = code;
@@ -1340,7 +1383,7 @@ window.doMasterEntryNew = async function() {
     showSetupStep(1);
     applyLangUI();
   } catch(e) {
-    document.getElementById('masterEntryError').textContent = e.message;
+    document.getElementById('newGroupConfirmError').textContent = e.message;
     hideLoading();
   }
 };
