@@ -1601,8 +1601,9 @@ window.masterLogout = function() {
 async function loadAllGroups() {
   const myGroupCodes = getMyGroupCodes();
 
-  // このデバイスの masterId に加え、loginGroupCode の Firestore 上の master_id も取得する。
-  // 別デバイスからのアクセスでは masterId が異なるため、Firestore 上の値を正として使う。
+  // loginGroupCode の Firestore 上の master_id を正として取得する。
+  // 別デバイスからのアクセスでは localStorage の masterId が異なるため、
+  // Firestore 上の master_id を優先して全グループ検索に使う。
   let effectiveMasterIds = masterId ? [masterId] : [];
   if (currentRole === 'master' && loginGroupCode) {
     try {
@@ -1624,49 +1625,39 @@ async function loadAllGroups() {
     } catch(_) {}
   }
 
-  // 戦略1: 全グループ取得（Firestoreルールが許可している場合）
-  let fetchedAll = false;
-  try {
-    const snap = await getDocs(collection(db, 'groups'));
-    groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' }));
-    groups.sort((a, b) => a.code.localeCompare(b.code));
-    fetchedAll = true;
-  } catch(_) {}
+  // master_id クエリで自分のグループを取得する。
+  // getDocs(collection) は Firestore ルールにより他グループが除外されるため使わない。
+  groups = [];
+  const fetched = new Set();
 
-  if (!fetchedAll) {
-    // 戦略2: 全取得が拒否された場合、master_id クエリ + 個別コードで取得
-    groups = [];
-    const fetched = new Set();
-
-    // 2a. 各 masterId 候補で絞り込みクエリ
-    await Promise.all(effectiveMasterIds.map(async mid => {
-      try {
-        const q = query(collection(db, 'groups'), where('master_id', '==', mid));
-        const snap = await getDocs(q);
-        snap.docs.forEach(d => {
-          if (!fetched.has(d.id)) {
-            groups.push({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' });
-            fetched.add(d.id);
-          }
-        });
-      } catch(_) {}
-    }));
-
-    // 2b. localStorage の既知コードを個別取得（クエリで取れなかった分）
-    const codesFromStorage = [...myGroupCodes];
-    if (loginGroupCode && !codesFromStorage.includes(loginGroupCode)) codesFromStorage.push(loginGroupCode);
-    await Promise.all(codesFromStorage.filter(c => !fetched.has(c)).map(async c => {
-      try {
-        const snap = await getDoc(doc(db, 'groups', c));
-        if (snap.exists()) {
-          groups.push({ code: snap.id, name: snap.data().name || '', createdAt: snap.data().createdAt || '', master_id: snap.data().master_id || '' });
-          fetched.add(snap.id);
+  // 各 masterId 候補で絞り込みクエリ
+  await Promise.all(effectiveMasterIds.map(async mid => {
+    try {
+      const q = query(collection(db, 'groups'), where('master_id', '==', mid));
+      const snap = await getDocs(q);
+      snap.docs.forEach(d => {
+        if (!fetched.has(d.id)) {
+          groups.push({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' });
+          fetched.add(d.id);
         }
-      } catch(_) {}
-    }));
+      });
+    } catch(_) {}
+  }));
 
-    groups.sort((a, b) => a.code.localeCompare(b.code));
-  }
+  // localStorage の既知コードを個別取得（クエリで取れなかった分・master_id 未設定グループの救済）
+  const codesFromStorage = [...myGroupCodes];
+  if (loginGroupCode && !codesFromStorage.includes(loginGroupCode)) codesFromStorage.push(loginGroupCode);
+  await Promise.all(codesFromStorage.filter(c => !fetched.has(c)).map(async c => {
+    try {
+      const snap = await getDoc(doc(db, 'groups', c));
+      if (snap.exists()) {
+        groups.push({ code: snap.id, name: snap.data().name || '', createdAt: snap.data().createdAt || '', master_id: snap.data().master_id || '' });
+        fetched.add(snap.id);
+      }
+    } catch(_) {}
+  }));
+
+  groups.sort((a, b) => a.code.localeCompare(b.code));
 
   if (currentRole === 'user' && loginGroupCode) {
     myGroups = groups.filter(g => g.code === loginGroupCode);
@@ -1734,9 +1725,17 @@ window.createGroup = async function() {
     return;
   }
   const name = document.getElementById('newGroupName').value.trim();
-  let code; let attempts = 0;
-  do { code = generateCode(); attempts++; } while (groups.find(g => g.code === code) && attempts < 100);
   showLoading();
+  // コード重複チェックは getDoc で直接確認（groups は自分のグループのみのため）
+  let code; let attempts = 0;
+  do {
+    code = generateCode();
+    attempts++;
+    try {
+      const existing = await getDoc(doc(db, 'groups', code));
+      if (!existing.exists()) break;
+    } catch(_) { break; }
+  } while (attempts < 20);
   try {
     await setDoc(doc(db, 'groups', code), { name, createdAt: new Date().toISOString(), master_id: masterId || '' });
     await setDoc(doc(db, 'groups', code, 'config', 'main'), { tile_title: '' });
