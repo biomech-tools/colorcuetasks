@@ -276,9 +276,6 @@ service cloud.firestore {<br>
       <div class="center-row" style="margin-top:16px">
         <button class="text-link" id="masterEntryNewBtn" onclick="doMasterEntryNew()"></button>
       </div>
-      <div class="center-row" style="margin-top:8px">
-        <button class="text-link" onclick="backToModeSelect()" id="backToModeBtn2"></button>
-      </div>
     </div>
 
     <!-- 初回セットアップ（パスワード未設定） -->
@@ -643,7 +640,7 @@ const STRINGS = {
     createGroupLoginBtn:   'グループを作成してセットアップへ',
     masterEntryPwLabel:    'マスターパスワード',
     masterEntryLoginBtn:   '管理画面に入る',
-    masterEntryNewBtn:     '初めての方：新規セットアップ',
+    masterEntryNewBtn:     'パスワード新規作成',
     loginPwLabelMaster:    'マスターパスワード',
     loginPwLabelUser:      'ユーザーパスワード',
     loginBtn:              'ログイン',
@@ -787,7 +784,7 @@ const STRINGS = {
     createGroupLoginBtn:   'Create group & start setup',
     masterEntryPwLabel:    'Master Password',
     masterEntryLoginBtn:   'Enter admin panel',
-    masterEntryNewBtn:     'First time? Start setup',
+    masterEntryNewBtn:     'New password setup',
     loginPwLabelMaster:    'Master Password',
     loginPwLabelUser:      'User Password',
     loginBtn:              'Login',
@@ -998,7 +995,6 @@ function applyLangUI() {
   set('loginModeExistBtn',     'loginModeExistBtn');
   set('loginModeNewBtn',       'loginModeNewBtn');
   set('backToModeBtn',         'backToModeBtn');
-  set('backToModeBtn2',        'backToModeBtn');
   set('myGroupPanelLabel',     'myGroupPanelLabel');
   set('myGroupDivider',        'myGroupDivider');
   set('myGroupNewBtn',         'myGroupNewBtn');
