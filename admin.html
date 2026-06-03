@@ -262,15 +262,21 @@ service cloud.firestore {<br>
       </div>
     </div>
 
-    <!-- 新しいグループを作成（未ログイン時） -->
-    <div id="newGroupPanel" style="display:none">
+    <!-- 新しいグループを作成（未ログイン時） → 廃止：masterEntryPanel に統合 -->
+
+    <!-- マスター入口パネル（グループコード不明時）-->
+    <div id="masterEntryPanel" style="display:none">
       <div class="form-row">
-        <label class="form-label" id="newGroupNameLabelLogin"></label>
-        <input class="form-input-sm" id="newGroupNameLogin" placeholder="">
+        <label class="form-label" id="masterEntryPwLabel"></label>
+        <input class="form-input" id="masterEntryPwInput" type="password" placeholder="••••••••"
+               autocomplete="off" onkeydown="if(event.key==='Enter')doMasterEntryLogin()">
       </div>
-      <div class="form-error" id="newGroupError"></div>
-      <button class="btn btn-primary" id="createGroupLoginBtn" onclick="createGroupFromLogin()"></button>
-      <div class="center-row" style="margin-top:12px">
+      <button class="btn btn-primary" id="masterEntryLoginBtn" onclick="doMasterEntryLogin()"></button>
+      <div class="form-error" id="masterEntryError"></div>
+      <div class="center-row" style="margin-top:16px">
+        <button class="text-link" id="masterEntryNewBtn" onclick="doMasterEntryNew()"></button>
+      </div>
+      <div class="center-row" style="margin-top:8px">
         <button class="text-link" onclick="backToModeSelect()" id="backToModeBtn2"></button>
       </div>
     </div>
@@ -626,15 +632,18 @@ const STRINGS = {
     loginGroupCodeNext:    '次へ',
     loginGroupCodeError:   'グループコードが見つかりません',
     loginModeExistBtn:     'グループコードを入力して入る',
-    loginModeNewBtn:       '新しいグループを作成',
+    loginModeNewBtn:       '管理画面に入る',
     backToModeBtn:         '戻る',
     newGroupNameLabelLogin:'グループの説明（任意）',
     myGroupPanelLabel:     'グループを選択',
     myGroupDivider:        'または',
-    myGroupNewBtn:         '新しいグループを作成',
+    myGroupNewBtn:         '管理画面に入る',
     myGroupOtherBtn:       '別のグループコードを入力',
     newGroupLimitError:    `グループ数が上限（${MAX_GROUPS_PER_MASTER}）に達しています`,
     createGroupLoginBtn:   'グループを作成してセットアップへ',
+    masterEntryPwLabel:    'マスターパスワード',
+    masterEntryLoginBtn:   '管理画面に入る',
+    masterEntryNewBtn:     '初めての方：新規セットアップ',
     loginPwLabelMaster:    'マスターパスワード',
     loginPwLabelUser:      'ユーザーパスワード',
     loginBtn:              'ログイン',
@@ -767,15 +776,18 @@ const STRINGS = {
     loginGroupCodeNext:    'Next',
     loginGroupCodeError:   'Group code not found',
     loginModeExistBtn:     'Enter by group code',
-    loginModeNewBtn:       'Create a new group',
+    loginModeNewBtn:       'Enter admin panel',
     backToModeBtn:         'Back',
     newGroupNameLabelLogin:'Group description (optional)',
     myGroupPanelLabel:     'Select a group',
     myGroupDivider:        'or',
-    myGroupNewBtn:         'Create a new group',
+    myGroupNewBtn:         'Enter admin panel',
     myGroupOtherBtn:       'Enter a different group code',
     newGroupLimitError:    `Group limit (${MAX_GROUPS_PER_MASTER}) reached`,
     createGroupLoginBtn:   'Create group & start setup',
+    masterEntryPwLabel:    'Master Password',
+    masterEntryLoginBtn:   'Enter admin panel',
+    masterEntryNewBtn:     'First time? Start setup',
     loginPwLabelMaster:    'Master Password',
     loginPwLabelUser:      'User Password',
     loginBtn:              'Login',
@@ -998,8 +1010,9 @@ function applyLangUI() {
   set('forgotPwBtn',           'forgotPwBtn');
   set('rememberLabel',         'rememberLabel');
   set('loginPwLabel',          selectedRoleTab === 'master' ? 'loginPwLabelMaster' : 'loginPwLabelUser');
-  set('newGroupNameLabelLogin','newGroupNameLabelLogin');
-  set('createGroupLoginBtn',   'createGroupLoginBtn');
+  set('masterEntryPwLabel',    'masterEntryPwLabel');
+  set('masterEntryLoginBtn',   'masterEntryLoginBtn');
+  set('masterEntryNewBtn',     'masterEntryNewBtn');
   // Role tabs
   const mTabStr = isJa ? 'マスター <span class="role-badge master">MASTER</span>'
                        : 'Master <span class="role-badge master">MASTER</span>';
@@ -1087,7 +1100,7 @@ function set(id, key) {
 
 // ---- HELPER: パネル切替 ----
 function hideAllLoginPanels() {
-  ['loginModePanel','myGroupPanel','groupCodePanel','newGroupPanel','firstSetupPanel','normalLoginPanel'].forEach(id => {
+  ['loginModePanel','myGroupPanel','groupCodePanel','masterEntryPanel','firstSetupPanel','normalLoginPanel'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1116,10 +1129,10 @@ function showModeSelect() {
     renderMyGroupListLogin(savedCodes);
     document.getElementById('myGroupPanel').style.display = '';
   } else {
-    // 初回：新規作成のみ
-    document.getElementById('newGroupPanel').style.display = '';
-    document.getElementById('newGroupError').textContent   = '';
-    document.getElementById('newGroupNameLogin').value     = '';
+    // グループコード不明：マスターPW入力または新規セットアップ
+    document.getElementById('masterEntryPanel').style.display = '';
+    document.getElementById('masterEntryPwInput').value       = '';
+    document.getElementById('masterEntryError').textContent   = '';
   }
   document.getElementById('groupCodeError').textContent = '';
   document.getElementById('loginGroupCodeInput').value  = '';
@@ -1198,9 +1211,9 @@ window.backToModeSelect = function() {
 
 window.showNewGroupPanel = function() {
   hideAllLoginPanels();
-  document.getElementById('newGroupPanel').style.display = '';
-  document.getElementById('newGroupError').textContent   = '';
-  document.getElementById('newGroupNameLogin').value     = '';
+  document.getElementById('masterEntryPanel').style.display = '';
+  document.getElementById('masterEntryPwInput').value       = '';
+  document.getElementById('masterEntryError').textContent   = '';
 };
 
 function generateMasterId() {
@@ -1246,7 +1259,92 @@ window.createGroupFromLogin = async function() {
     showSetupStep(1);
     applyLangUI();
   } catch(e) {
-    document.getElementById('newGroupError').textContent = e.message;
+    document.getElementById('masterEntryError').textContent = e.message;
+    hideLoading();
+  }
+};
+
+// ---- MASTER ENTRY (グループコード不明時のマスターPW認証) ----
+
+// 既存マスターPWで認証 → masterId のグループを検索して管理画面へ
+window.doMasterEntryLogin = async function() {
+  const pw = document.getElementById('masterEntryPwInput').value;
+  if (!pw) return;
+  document.getElementById('masterEntryError').textContent = '';
+  showLoading();
+  try {
+    // masterId がある場合はそのグループを取得してPW照合
+    if (masterId) {
+      const q = query(collection(db, 'groups'), where('master_id', '==', masterId));
+      const snap = await getDocs(q);
+      for (const d of snap.docs) {
+        const settingsSnap = await getDoc(doc(db, 'groups', d.id, 'settings', 'main'));
+        const data = settingsSnap.exists() ? settingsSnap.data() : {};
+        if (data.master_pw && pw === data.master_pw) {
+          systemSettings = data;
+          currentRole    = 'master';
+          loginGroupCode = null;
+          localStorage.setItem(MASTER_REMEMBER_KEY, 'yes');
+          sessionStorage.setItem(SESSION_KEY, 'master');
+          sessionStorage.setItem(SESSION_KEY + '_group', '');
+          await enterAdmin();
+          return;
+        }
+      }
+    }
+    // localStorage の既知コードでも照合
+    const codes = getMyGroupCodes();
+    for (const code of codes) {
+      const settingsSnap = await getDoc(doc(db, 'groups', code, 'settings', 'main'));
+      const data = settingsSnap.exists() ? settingsSnap.data() : {};
+      if (data.master_pw && pw === data.master_pw) {
+        systemSettings = data;
+        currentRole    = 'master';
+        loginGroupCode = null;
+        localStorage.setItem(MASTER_REMEMBER_KEY, 'yes');
+        sessionStorage.setItem(SESSION_KEY, 'master');
+        sessionStorage.setItem(SESSION_KEY + '_group', '');
+        await enterAdmin();
+        return;
+      }
+    }
+    hideLoading();
+    document.getElementById('masterEntryError').textContent = s('loginError');
+  } catch(e) {
+    hideLoading();
+    document.getElementById('masterEntryError').textContent = e.message;
+  }
+};
+
+// 新規セットアップ：グループを自動作成してsetupWizardへ
+window.doMasterEntryNew = async function() {
+  if (!masterId) {
+    masterId = generateMasterId();
+    localStorage.setItem(MASTER_ID_KEY, masterId);
+  }
+  const myGroupCodes = getMyGroupCodes();
+  if (myGroupCodes.length >= MAX_GROUPS_PER_MASTER) {
+    document.getElementById('masterEntryError').textContent = s('newGroupLimitError');
+    return;
+  }
+  showLoading();
+  try {
+    const snap = await getDocs(collection(db, 'groups'));
+    const existingCodes = snap.docs.map(d => d.id);
+    let code; let attempts = 0;
+    do { code = generateCode(); attempts++; } while (existingCodes.includes(code) && attempts < 100);
+    await setDoc(doc(db, 'groups', code), { name: '', createdAt: new Date().toISOString(), master_id: masterId });
+    await setDoc(doc(db, 'groups', code, 'config', 'main'), { tile_title: '' });
+    addMyGroupCode(code);
+    loginGroupCode = code;
+    isFirstSetup   = true;
+    hideLoading();
+    hideAllLoginPanels();
+    showSetup();
+    showSetupStep(1);
+    applyLangUI();
+  } catch(e) {
+    document.getElementById('masterEntryError').textContent = e.message;
     hideLoading();
   }
 };
