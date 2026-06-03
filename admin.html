@@ -487,8 +487,7 @@ service cloud.firestore {<br>
   <!-- GROUPS -->
   <div class="section" id="sec-groups">
     <div class="section-title" id="sec-groups-heading"></div>
-    <div id="debugPanel" style="display:none;background:#1a1a2e;color:#00ff88;font-size:11px;font-family:monospace;padding:8px;border-radius:6px;margin-bottom:8px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;border:1px solid #00ff88"></div>
-    <div class="group-list" id="groupList"></div>
+<div class="group-list" id="groupList"></div>
     <div class="new-group-box">
       <div class="section-title" id="newGroupBoxTitle"></div>
       <div class="form-row">
@@ -1614,17 +1613,8 @@ window.masterLogout = function() {
 };
 
 // ---- GROUPS ----
-function dbg(msg) {
-  const p = document.getElementById('debugPanel');
-  if (p) { p.style.display = ''; p.textContent += msg + '\n'; }
-}
-
 async function loadAllGroups() {
   const myGroupCodes = getMyGroupCodes();
-  dbg('--- loadAllGroups ---');
-  dbg('masterId(local): ' + masterId);
-  dbg('loginGroupCode: ' + loginGroupCode);
-  dbg('myGroupCodes: ' + JSON.stringify(myGroupCodes));
 
   let effectiveMasterIds = masterId ? [masterId] : [];
   if (currentRole === 'master' && loginGroupCode) {
@@ -1632,7 +1622,6 @@ async function loadAllGroups() {
       const gSnap = await getDoc(doc(db, 'groups', loginGroupCode));
       if (gSnap.exists()) {
         const remoteMasterId = gSnap.data().master_id;
-        dbg('remoteMasterId from Firestore: ' + remoteMasterId);
         if (remoteMasterId) {
           if (!effectiveMasterIds.includes(remoteMasterId)) {
             effectiveMasterIds.push(remoteMasterId);
@@ -1643,12 +1632,9 @@ async function loadAllGroups() {
             effectiveMasterIds = [masterId];
           }
         }
-      } else {
-        dbg('group doc NOT found in Firestore');
       }
-    } catch(e) { dbg('getDoc error: ' + e.message); }
+    } catch(_) {}
   }
-  dbg('effectiveMasterIds: ' + JSON.stringify(effectiveMasterIds));
 
   groups = [];
   const fetched = new Set();
@@ -1657,15 +1643,13 @@ async function loadAllGroups() {
     try {
       const q = query(collection(db, 'groups'), where('master_id', '==', mid));
       const snap = await getDocs(q);
-      dbg('query master_id=' + mid + ' => ' + snap.docs.length + ' docs');
       snap.docs.forEach(d => {
-        dbg('  found: ' + d.id);
         if (!fetched.has(d.id)) {
           groups.push({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' });
           fetched.add(d.id);
         }
       });
-    } catch(e) { dbg('query error mid=' + mid + ': ' + e.message); }
+    } catch(_) {}
   }));
 
   const codesFromStorage = [...myGroupCodes];
@@ -1674,25 +1658,21 @@ async function loadAllGroups() {
     try {
       const snap = await getDoc(doc(db, 'groups', c));
       if (snap.exists()) {
-        dbg('storage fallback found: ' + snap.id);
         groups.push({ code: snap.id, name: snap.data().name || '', createdAt: snap.data().createdAt || '', master_id: snap.data().master_id || '' });
         fetched.add(snap.id);
       }
-    } catch(e) { dbg('storage getDoc error ' + c + ': ' + e.message); }
+    } catch(_) {}
   }));
 
   // master_id が空のグループを発見したら自分の masterId で修復する（Firestore書き込み）
-  // これにより別デバイスからも master_id クエリで検索できるようになる
   if (masterId) {
     const toRepair = groups.filter(g => !g.master_id && myGroupCodes.includes(g.code));
     if (toRepair.length > 0) {
-      dbg('repairing master_id for: ' + toRepair.map(g => g.code).join(', '));
       await Promise.all(toRepair.map(async g => {
         try {
           await setDoc(doc(db, 'groups', g.code), { master_id: masterId }, { merge: true });
           g.master_id = masterId;
-          dbg('repaired: ' + g.code);
-        } catch(e) { dbg('repair error ' + g.code + ': ' + e.message); }
+        } catch(_) {}
       }));
     }
   }
@@ -1708,8 +1688,6 @@ async function loadAllGroups() {
       (loginGroupCode && g.code === loginGroupCode)
     );
   }
-  dbg('myGroups count: ' + myGroups.length);
-  dbg('myGroups: ' + myGroups.map(g => g.code).join(', '));
 }
 
 async function selectGroup(code, doLoad, skipRender) {
