@@ -1688,6 +1688,10 @@ window.goBack = function() {
       data: { tile_title: tileTitle, subjects, tasks, submitData: {} },
     }));
   }
+  // 現在のグループがあればメイン画面でそのグループに自動入室させる
+  if (activeGroupCode) {
+    sessionStorage.setItem('cct_session_group_v1', activeGroupCode);
+  }
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_KEY + '_group');
   location.href = 'index.html';
