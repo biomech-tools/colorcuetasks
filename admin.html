@@ -583,7 +583,7 @@ service cloud.firestore {<br>
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore, doc, getDoc, getDocs, collection,
-  setDoc, deleteDoc, writeBatch
+  setDoc, deleteDoc, writeBatch, query, where
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -1490,6 +1490,27 @@ window.forgotReset = async function() {
 
 // ---- ENTER ADMIN ----
 async function enterAdmin() {
+  // 別デバイスからのアクセス: loginGroupCode の master_id を読んで
+  // 今回セッション中のグループ検索に使う (sessionMasterId)
+  if (currentRole === 'master' && loginGroupCode) {
+    try {
+      const gSnap = await getDoc(doc(db, 'groups', loginGroupCode));
+      if (gSnap.exists()) {
+        const remoteMasterId = gSnap.data().master_id;
+        if (remoteMasterId && remoteMasterId !== masterId) {
+          // 今セッションだけこの masterId で全グループを検索する
+          sessionStorage.setItem('cct_session_master_id', remoteMasterId);
+        } else {
+          sessionStorage.removeItem('cct_session_master_id');
+        }
+        // masterId が未設定のデバイスは恒久的に登録する
+        if (!masterId && remoteMasterId) {
+          masterId = remoteMasterId;
+          localStorage.setItem(MASTER_ID_KEY, masterId);
+        }
+      }
+    } catch(_) {}
+  }
   await loadAllGroups();
   // ユーザーの場合は常に loginGroupCode のグループに入室（他のグループを選択する権限がないため）
   if (currentRole === 'user') {
@@ -1599,17 +1620,57 @@ window.masterLogout = function() {
 
 // ---- GROUPS ----
 async function loadAllGroups() {
-  const snap = await getDocs(collection(db, 'groups'));
-  groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' }));
-  groups.sort((a, b) => a.code.localeCompare(b.code));
+  const myGroupCodes = getMyGroupCodes();
+  // 別デバイスからアクセス時のセッション限定 masterId
+  const sessionMasterId = sessionStorage.getItem('cct_session_master_id');
+  // 検索に使う masterId の候補（自デバイス優先、次にセッション）
+  const searchMasterIds = [...new Set([masterId, sessionMasterId].filter(Boolean))];
+
+  // 戦略1: 全グループ取得（Firestoreルールが許可している場合）
+  try {
+    const snap = await getDocs(collection(db, 'groups'));
+    groups = snap.docs.map(d => ({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' }));
+    groups.sort((a, b) => a.code.localeCompare(b.code));
+  } catch(_) {
+    // 戦略2: 全取得が拒否された場合、master_id クエリ + 個別コードで取得
+    groups = [];
+    const fetched = new Set();
+
+    // 2a. 各 masterId 候補で絞り込みクエリ
+    await Promise.all(searchMasterIds.map(async mid => {
+      try {
+        const q = query(collection(db, 'groups'), where('master_id', '==', mid));
+        const snap = await getDocs(q);
+        snap.docs.forEach(d => {
+          if (!fetched.has(d.id)) {
+            groups.push({ code: d.id, name: d.data().name || '', createdAt: d.data().createdAt || '', master_id: d.data().master_id || '' });
+            fetched.add(d.id);
+          }
+        });
+      } catch(_) {}
+    }));
+
+    // 2b. localStorage の既知コードを個別取得（クエリで取れなかった分）
+    const codesFromStorage = [...myGroupCodes];
+    if (loginGroupCode && !codesFromStorage.includes(loginGroupCode)) codesFromStorage.push(loginGroupCode);
+    await Promise.all(codesFromStorage.filter(c => !fetched.has(c)).map(async c => {
+      try {
+        const snap = await getDoc(doc(db, 'groups', c));
+        if (snap.exists()) {
+          groups.push({ code: snap.id, name: snap.data().name || '', createdAt: snap.data().createdAt || '', master_id: snap.data().master_id || '' });
+          fetched.add(snap.id);
+        }
+      } catch(_) {}
+    }));
+
+    groups.sort((a, b) => a.code.localeCompare(b.code));
+  }
+
   if (currentRole === 'user' && loginGroupCode) {
-    // ユーザーは loginGroupCode のグループのみ
     myGroups = groups.filter(g => g.code === loginGroupCode);
   } else {
-    // マスター: masterId か localStorage か loginGroupCode で一致するグループ
-    const myGroupCodes = getMyGroupCodes();
     myGroups = groups.filter(g =>
-      (masterId && g.master_id === masterId) ||
+      searchMasterIds.some(mid => mid && g.master_id === mid) ||
       myGroupCodes.includes(g.code) ||
       (loginGroupCode && g.code === loginGroupCode)
     );
@@ -1684,12 +1745,10 @@ window.createGroup = async function() {
       recovery_code: systemSettings.recovery_code  || '',
     });
     addMyGroupCode(code);
-    groups.push({ code, name, createdAt: new Date().toISOString(), master_id: masterId || '' });
-    groups.sort((a, b) => a.code.localeCompare(b.code));
-    const myGroupCodesNew = getMyGroupCodes();
-    myGroups = groups.filter(g => (masterId && g.master_id === masterId) || myGroupCodesNew.includes(g.code));
     document.getElementById('newGroupName').value = '';
     subjects = []; tasks = [];
+    // グループ一覧を再取得してから選択・描画
+    await loadAllGroups();
     await selectGroup(code, false, true);
     renderGroupList();
     showToast(s('toastGroupCreated') + ' — ' + code);
