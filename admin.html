@@ -1323,6 +1323,21 @@ window.doLogin = async function() {
       } else {
         localStorage.removeItem(MASTER_REMEMBER_KEY);
       }
+      // masterId が未設定なら生成して localStorage に保存する
+      // （グループ作成デバイス以外でも masterId を確定させるため）
+      if (!masterId) {
+        masterId = generateMasterId();
+        localStorage.setItem(MASTER_ID_KEY, masterId);
+      }
+      // ログイングループの master_id が空なら自分の masterId で修復する
+      // これにより以降 master_id クエリで全グループを横断検索できるようになる
+      try {
+        const gSnap = await getDoc(doc(db, 'groups', loginGroupCode));
+        if (gSnap.exists() && !gSnap.data().master_id) {
+          await setDoc(doc(db, 'groups', loginGroupCode), { master_id: masterId }, { merge: true });
+        }
+      } catch(_) {}
+      addMyGroupCode(loginGroupCode);
     } else {
       if (pw !== (systemSettings.user_pw || DEFAULT_USER_PW)) {
         document.getElementById('loginError').textContent = s('loginError');
@@ -1666,6 +1681,22 @@ async function loadAllGroups() {
     } catch(e) { dbg('storage getDoc error ' + c + ': ' + e.message); }
   }));
 
+  // master_id が空のグループを発見したら自分の masterId で修復する（Firestore書き込み）
+  // これにより別デバイスからも master_id クエリで検索できるようになる
+  if (masterId) {
+    const toRepair = groups.filter(g => !g.master_id && myGroupCodes.includes(g.code));
+    if (toRepair.length > 0) {
+      dbg('repairing master_id for: ' + toRepair.map(g => g.code).join(', '));
+      await Promise.all(toRepair.map(async g => {
+        try {
+          await setDoc(doc(db, 'groups', g.code), { master_id: masterId }, { merge: true });
+          g.master_id = masterId;
+          dbg('repaired: ' + g.code);
+        } catch(e) { dbg('repair error ' + g.code + ': ' + e.message); }
+      }));
+    }
+  }
+
   groups.sort((a, b) => a.code.localeCompare(b.code));
 
   if (currentRole === 'user' && loginGroupCode) {
@@ -1735,6 +1766,11 @@ window.createGroup = async function() {
     showToast(s('newGroupLimitError'));
     return;
   }
+  // masterId が未設定なら生成して永続化（グループに正しく紐づけるため必須）
+  if (!masterId) {
+    masterId = generateMasterId();
+    localStorage.setItem(MASTER_ID_KEY, masterId);
+  }
   const name = document.getElementById('newGroupName').value.trim();
   showLoading();
   // コード重複チェックは getDoc で直接確認（groups は自分のグループのみのため）
@@ -1748,7 +1784,7 @@ window.createGroup = async function() {
     } catch(_) { break; }
   } while (attempts < 20);
   try {
-    await setDoc(doc(db, 'groups', code), { name, createdAt: new Date().toISOString(), master_id: masterId || '' });
+    await setDoc(doc(db, 'groups', code), { name, createdAt: new Date().toISOString(), master_id: masterId });
     await setDoc(doc(db, 'groups', code, 'config', 'main'), { tile_title: '' });
     // 現在のマスターPW・リカバリーコードを引き継ぐ（再セットアップ不要）
     await setDoc(doc(db, 'groups', code, 'settings', 'main'), {
